@@ -1,0 +1,40 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Alumni {
+  id             String   @id @default(uuid())
+  nia            String   @unique
+  namaLengkap    String
+  noWhatsapp     String   @unique
+  alamat         String?
+  angkatanMasuk  Int?
+  angkatanLulus  Int?
+  dataVerifiedAt DateTime?
+  source         String   @default("MIGRATED_HISTORICAL")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  partisipasi PartisipasiHaul[]
+}
+
+model PartisipasiHaul {
+  id          String   @id @default(uuid())
+  alumniId    String
+  alumni      Alumni   @relation(fields: [alumniId], references: [id])
+  tahunAcara  Int
+  tahlilAkbar String?
+  haul        String?
+  menginap    String?
+  createdAt   DateTime @default(now())
+
+  @@unique([alumniId, tahunAcara])
+}

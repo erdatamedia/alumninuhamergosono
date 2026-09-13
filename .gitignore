@@ -39,3 +39,12 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+/app/generated/prisma
+
+# database sqlite lokal
+/prisma/dev.db
+/prisma/dev.db-journal
+
+# data pribadi alumni (nama/no HP/alamat) — repo ini public, jangan pernah commit
+/prisma/alumni_seed_final.json
