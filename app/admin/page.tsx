@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Image from "next/image";
 
 type AlumniRow = {
   id: string;
@@ -96,12 +97,12 @@ export default function AdminPage() {
   if (!authenticated) {
     return (
       <main className="flex flex-1 items-center justify-center px-4">
-        <form
-          onSubmit={handleLogin}
-          className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-100"
-        >
-          <h1 className="text-lg font-semibold text-gray-900">Admin Login</h1>
-          <p className="mt-1 text-sm text-gray-500">Khusus sie kesekretariatan.</p>
+        <form onSubmit={handleLogin} className="glass-card w-full max-w-sm rounded-[28px] p-6">
+          <div className="mx-auto mb-3 h-12 w-12 overflow-hidden rounded-full ring-2 ring-white/70">
+            <Image src="/logo.png" alt="Logo Pondok Pesantren Nurul Huda" width={48} height={48} className="h-full w-full object-cover" />
+          </div>
+          <h1 className="text-center text-lg font-semibold text-gray-900">Admin Login</h1>
+          <p className="mt-1 text-center text-sm text-gray-600">Khusus sie kesekretariatan.</p>
           <input
             type="password"
             required
@@ -109,13 +110,13 @@ export default function AdminPage() {
             placeholder="Password admin"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="mt-4 w-full rounded-xl border border-gray-200 px-4 py-3 text-base outline-none focus:border-green-600 focus:ring-2 focus:ring-green-100"
+            className="glass-input mt-4 w-full rounded-2xl px-4 py-3 text-base outline-none focus:ring-2 focus:ring-green-400/40"
           />
           {loginError && <p className="mt-2 text-sm text-red-600">{loginError}</p>}
           <button
             type="submit"
             disabled={loggingIn}
-            className="mt-4 w-full rounded-xl bg-green-700 py-3 text-base font-medium text-white transition active:scale-[0.98] disabled:opacity-60"
+            className="glass-button-primary mt-4 w-full rounded-full py-3 text-base font-medium text-white transition active:scale-[0.98] disabled:opacity-60"
           >
             {loggingIn ? "Memeriksa..." : "Masuk"}
           </button>
@@ -128,10 +129,15 @@ export default function AdminPage() {
     <main className="flex-1 px-4 py-8">
       <div className="mx-auto max-w-6xl">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h1 className="text-xl font-semibold text-gray-900">Data Alumni</h1>
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 overflow-hidden rounded-full ring-2 ring-white/70">
+              <Image src="/logo.png" alt="Logo Pondok Pesantren Nurul Huda" width={40} height={40} className="h-full w-full object-cover" />
+            </div>
+            <h1 className="text-xl font-semibold text-gray-900">Data Alumni</h1>
+          </div>
           <a
             href="/api/admin/export"
-            className="rounded-xl bg-green-700 px-4 py-2 text-sm font-medium text-white transition active:scale-95"
+            className="glass-button-primary rounded-full px-4 py-2 text-sm font-medium text-white transition active:scale-95"
           >
             Export Excel
           </a>
@@ -141,7 +147,7 @@ export default function AdminPage() {
           <select
             value={angkatanFilter}
             onChange={(e) => setAngkatanFilter(e.target.value)}
-            className="rounded-xl border border-gray-200 px-3 py-2 text-sm"
+            className="glass-input rounded-2xl px-3 py-2 text-sm"
           >
             <option value="">Semua Angkatan Masuk</option>
             {angkatanOptions.map((y) => (
@@ -153,7 +159,7 @@ export default function AdminPage() {
           <select
             value={haulFilter}
             onChange={(e) => setHaulFilter(e.target.value)}
-            className="rounded-xl border border-gray-200 px-3 py-2 text-sm"
+            className="glass-input rounded-2xl px-3 py-2 text-sm"
           >
             <option value="">Semua Status Kehadiran</option>
             <option value="Hadir Luring">Hadir Luring</option>
@@ -163,7 +169,7 @@ export default function AdminPage() {
           <select
             value={verifFilter}
             onChange={(e) => setVerifFilter(e.target.value)}
-            className="rounded-xl border border-gray-200 px-3 py-2 text-sm"
+            className="glass-input rounded-2xl px-3 py-2 text-sm"
           >
             <option value="">Semua Status Verifikasi</option>
             <option value="verified">Terverifikasi</option>
@@ -171,10 +177,10 @@ export default function AdminPage() {
           </select>
         </div>
 
-        <div className="mt-4 overflow-x-auto rounded-2xl bg-white shadow-sm ring-1 ring-gray-100">
+        <div className="glass-card mt-4 overflow-x-auto rounded-[28px]">
           <table className="min-w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-100 text-left text-gray-500">
+              <tr className="border-b border-white/50 text-left text-gray-600">
                 <th className="px-4 py-3 font-medium">NIA</th>
                 <th className="px-4 py-3 font-medium">Nama</th>
                 <th className="px-4 py-3 font-medium">No. WhatsApp</th>
@@ -198,7 +204,7 @@ export default function AdminPage() {
                 </tr>
               ) : (
                 alumni.map((a) => (
-                  <tr key={a.id} className="border-b border-gray-50 last:border-0">
+                  <tr key={a.id} className="border-b border-white/40 last:border-0">
                     <td className="px-4 py-3 text-gray-600">{a.nia}</td>
                     <td className="px-4 py-3 font-medium text-gray-900">{a.namaLengkap}</td>
                     <td className="px-4 py-3 text-gray-600">{a.noWhatsapp}</td>

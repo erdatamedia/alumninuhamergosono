@@ -1,19 +1,117 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f9fafb;
-  --foreground: #171717;
+  --background: #eef6f1;
+  --foreground: #14231a;
+  --font-ios: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Inter",
+    "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-ios);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+  font-family: var(--font-ios);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Wallpaper ala iOS: gumpalan warna blur di belakang layer kaca. Tetap di belakang konten (z-index -1). */
+.ios-wallpaper {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.ios-wallpaper::before,
+.ios-wallpaper::after,
+.ios-wallpaper .blob-3 {
+  content: "";
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(70px);
+  opacity: 0.55;
+}
+
+.ios-wallpaper::before {
+  width: 420px;
+  height: 420px;
+  top: -120px;
+  left: -100px;
+  background: radial-gradient(circle at 30% 30%, #86efac, #16a34a 70%);
+}
+
+.ios-wallpaper::after {
+  width: 380px;
+  height: 380px;
+  bottom: -140px;
+  right: -100px;
+  background: radial-gradient(circle at 60% 40%, #99f6e4, #0d9488 70%);
+}
+
+.ios-wallpaper .blob-3 {
+  width: 320px;
+  height: 320px;
+  top: 35%;
+  right: 10%;
+  background: radial-gradient(circle at 40% 40%, #fde68a, #f59e0b 70%);
+  opacity: 0.35;
+}
+
+/* Kartu kaca ala iOS: latar tembus pandang + blur + tepi tipis terang. */
+.glass-card {
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow:
+    0 8px 32px rgba(15, 55, 35, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+.glass-input {
+  background: rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+}
+
+.glass-input:focus {
+  background: rgba(255, 255, 255, 0.75);
+}
+
+.glass-button-primary {
+  background: linear-gradient(180deg, rgba(34, 139, 87, 0.95), rgba(21, 101, 66, 0.95));
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  box-shadow:
+    0 4px 16px rgba(21, 101, 66, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+.glass-button-secondary {
+  background: rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+}
+
+.glass-pill {
+  background: rgba(255, 255, 255, 0.45);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+}
+
+.glass-pill-active {
+  background: linear-gradient(180deg, rgba(34, 139, 87, 0.9), rgba(21, 101, 66, 0.9));
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 4px 14px rgba(21, 101, 66, 0.3);
 }

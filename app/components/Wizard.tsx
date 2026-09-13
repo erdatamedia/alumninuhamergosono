@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   AlumniData,
@@ -34,6 +35,9 @@ const variants = {
   center: { opacity: 1, x: 0 },
   exit: { opacity: 0, x: -24 },
 };
+
+const inputClass =
+  "glass-input w-full rounded-2xl px-4 py-3 text-base text-gray-900 outline-none transition focus:ring-2 focus:ring-green-400/40";
 
 export default function Wizard() {
   const router = useRouter();
@@ -145,13 +149,13 @@ export default function Wizard() {
   return (
     <div className="mx-auto w-full max-w-md px-4 py-8 sm:py-12">
       <header className="mb-6 text-center">
-        <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-green-700 text-xl font-bold text-white">
-          NH
+        <div className="mx-auto mb-3 h-16 w-16 overflow-hidden rounded-full shadow-lg ring-2 ring-white/70">
+          <Image src="/logo.png" alt="Logo Pondok Pesantren Nurul Huda" width={64} height={64} className="h-full w-full object-cover" priority />
         </div>
         <h1 className="text-xl font-semibold text-gray-900">
           Portal Alumni Nurul Huda Mergosono
         </h1>
-        <p className="mt-1 text-sm text-gray-500">
+        <p className="mt-1 text-sm text-gray-600">
           Update data & konfirmasi kehadiran Haul {TAHUN_ACARA}
         </p>
       </header>
@@ -232,22 +236,22 @@ function StepIndicator({ step }: { step: Step }) {
   const activeIndex = steps.findIndex((s) => s.key === step);
 
   return (
-    <div className="flex items-center justify-center gap-2">
+    <div className="glass-pill mx-auto flex w-fit items-center gap-2 rounded-full px-3 py-2">
       {steps.map((s, i) => (
         <div key={s.key} className="flex items-center gap-2">
           <div
-            className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-medium transition-colors ${
-              i <= activeIndex ? "bg-green-700 text-white" : "bg-gray-200 text-gray-500"
+            className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-medium transition-all duration-300 ${
+              i <= activeIndex ? "glass-pill-active text-white" : "bg-white/30 text-gray-500"
             }`}
           >
             {i + 1}
           </div>
           <span
-            className={`text-xs ${i <= activeIndex ? "text-gray-900 font-medium" : "text-gray-400"}`}
+            className={`text-xs ${i <= activeIndex ? "text-gray-900 font-medium" : "text-gray-500"}`}
           >
             {s.label}
           </span>
-          {i < steps.length - 1 && <div className="h-px w-6 bg-gray-200" />}
+          {i < steps.length - 1 && <div className="h-px w-6 bg-white/60" />}
         </div>
       ))}
     </div>
@@ -268,9 +272,9 @@ function SearchStep({
   error: string | null;
 }) {
   return (
-    <div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-100">
+    <div className="glass-card rounded-[28px] p-6">
       <h2 className="text-base font-semibold text-gray-900">Cari data Anda</h2>
-      <p className="mt-1 text-sm text-gray-500">
+      <p className="mt-1 text-sm text-gray-600">
         Masukkan nomor HP/WhatsApp yang pernah Anda daftarkan sebelumnya.
       </p>
       <form onSubmit={onSubmit} className="mt-4 space-y-3">
@@ -282,13 +286,13 @@ function SearchStep({
           placeholder="08xxxxxxxxxx"
           value={phone}
           onChange={(e) => setPhone(e.target.value)}
-          className="w-full rounded-xl border border-gray-200 px-4 py-3 text-base text-gray-900 outline-none focus:border-green-600 focus:ring-2 focus:ring-green-100"
+          className={inputClass}
         />
         {error && <p className="text-sm text-red-600">{error}</p>}
         <button
           type="submit"
           disabled={loading}
-          className="w-full rounded-xl bg-green-700 py-3 text-base font-medium text-white transition active:scale-[0.98] disabled:opacity-60"
+          className="glass-button-primary w-full rounded-full py-3 text-base font-medium text-white transition active:scale-[0.97] disabled:opacity-60"
         >
           {loading ? <SkeletonButtonLabel /> : "Cari Data Saya"}
         </button>
@@ -320,18 +324,18 @@ function ProfileStep({
   onBack: () => void;
 }) {
   return (
-    <div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-100">
+    <div className="glass-card rounded-[28px] p-6">
       <h2 className="text-base font-semibold text-gray-900">
         {isNew ? "Data belum ditemukan" : "Konfirmasi data Anda"}
       </h2>
-      <p className="mt-1 text-sm text-gray-500">
+      <p className="mt-1 text-sm text-gray-600">
         {isNew
           ? "Nomor ini belum terdaftar. Silakan lengkapi data di bawah untuk mendaftar."
           : "Periksa data Anda, ubah bila ada yang perlu diperbarui."}
       </p>
 
       {alumni.nia && (
-        <p className="mt-2 text-xs text-gray-400">NIA: {alumni.nia}</p>
+        <p className="mt-2 text-xs text-gray-500">NIA: {alumni.nia}</p>
       )}
 
       <form onSubmit={onSubmit} className="mt-4 space-y-3">
@@ -340,7 +344,7 @@ function ProfileStep({
             required
             value={alumni.namaLengkap}
             onChange={(e) => setAlumni({ ...alumni, namaLengkap: e.target.value })}
-            className="w-full rounded-xl border border-gray-200 px-4 py-3 text-base text-gray-900 outline-none focus:border-green-600 focus:ring-2 focus:ring-green-100"
+            className={inputClass}
           />
         </Field>
         <Field label="No. WhatsApp">
@@ -350,7 +354,7 @@ function ProfileStep({
             inputMode="numeric"
             value={alumni.noWhatsapp}
             onChange={(e) => setAlumni({ ...alumni, noWhatsapp: e.target.value })}
-            className="w-full rounded-xl border border-gray-200 px-4 py-3 text-base text-gray-900 outline-none focus:border-green-600 focus:ring-2 focus:ring-green-100"
+            className={inputClass}
           />
         </Field>
         <Field label="Alamat">
@@ -358,7 +362,7 @@ function ProfileStep({
             value={alumni.alamat}
             onChange={(e) => setAlumni({ ...alumni, alamat: e.target.value })}
             rows={2}
-            className="w-full rounded-xl border border-gray-200 px-4 py-3 text-base text-gray-900 outline-none focus:border-green-600 focus:ring-2 focus:ring-green-100"
+            className={inputClass}
           />
         </Field>
         <div className="grid grid-cols-2 gap-3">
@@ -367,7 +371,7 @@ function ProfileStep({
               type="number"
               value={alumni.angkatanMasuk}
               onChange={(e) => setAlumni({ ...alumni, angkatanMasuk: e.target.value })}
-              className="w-full rounded-xl border border-gray-200 px-4 py-3 text-base text-gray-900 outline-none focus:border-green-600 focus:ring-2 focus:ring-green-100"
+              className={inputClass}
             />
           </Field>
           <Field label="Angkatan Lulus">
@@ -375,7 +379,7 @@ function ProfileStep({
               type="number"
               value={alumni.angkatanLulus}
               onChange={(e) => setAlumni({ ...alumni, angkatanLulus: e.target.value })}
-              className="w-full rounded-xl border border-gray-200 px-4 py-3 text-base text-gray-900 outline-none focus:border-green-600 focus:ring-2 focus:ring-green-100"
+              className={inputClass}
             />
           </Field>
         </div>
@@ -384,13 +388,13 @@ function ProfileStep({
           <button
             type="button"
             onClick={onBack}
-            className="rounded-xl px-4 py-3 text-base font-medium text-gray-600 transition active:scale-95"
+            className="glass-button-secondary rounded-full px-5 py-3 text-base font-medium text-gray-700 transition active:scale-95"
           >
             Kembali
           </button>
           <button
             type="submit"
-            className="flex-1 rounded-xl bg-green-700 py-3 text-base font-medium text-white transition active:scale-[0.98]"
+            className="glass-button-primary flex-1 rounded-full py-3 text-base font-medium text-white transition active:scale-[0.97]"
           >
             Lanjut
           </button>
@@ -416,9 +420,9 @@ function AttendanceStep({
   error: string | null;
 }) {
   return (
-    <div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-100">
+    <div className="glass-card rounded-[28px] p-6">
       <h2 className="text-base font-semibold text-gray-900">Konfirmasi Kehadiran</h2>
-      <p className="mt-1 text-sm text-gray-500">Isi rencana kehadiran Anda pada acara Haul.</p>
+      <p className="mt-1 text-sm text-gray-600">Isi rencana kehadiran Anda pada acara Haul.</p>
 
       <form onSubmit={onSubmit} className="mt-4 space-y-4">
         <RadioGroup
@@ -447,14 +451,14 @@ function AttendanceStep({
             type="button"
             onClick={onBack}
             disabled={submitting}
-            className="rounded-xl px-4 py-3 text-base font-medium text-gray-600 transition active:scale-95 disabled:opacity-50"
+            className="glass-button-secondary rounded-full px-5 py-3 text-base font-medium text-gray-700 transition active:scale-95 disabled:opacity-50"
           >
             Kembali
           </button>
           <button
             type="submit"
             disabled={submitting}
-            className="flex-1 rounded-xl bg-green-700 py-3 text-base font-medium text-white transition active:scale-[0.98] disabled:opacity-70"
+            className="glass-button-primary flex-1 rounded-full py-3 text-base font-medium text-white transition active:scale-[0.97] disabled:opacity-70"
           >
             {submitting ? "Menyimpan..." : "Simpan Konfirmasi"}
           </button>
@@ -493,10 +497,10 @@ function RadioGroup({
             type="button"
             key={opt}
             onClick={() => onChange(opt)}
-            className={`rounded-xl border px-4 py-3 text-left text-sm transition ${
+            className={`rounded-2xl px-4 py-3 text-left text-sm transition ${
               value === opt
-                ? "border-green-700 bg-green-50 text-green-900 font-medium"
-                : "border-gray-200 text-gray-700"
+                ? "glass-pill-active font-medium text-white"
+                : "glass-button-secondary text-gray-700"
             }`}
           >
             {opt}

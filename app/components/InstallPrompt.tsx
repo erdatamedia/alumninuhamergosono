@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { AnimatePresence, motion } from "framer-motion";
 
 const STORAGE_KEY = "nhm-install-prompt-shown";
@@ -81,9 +82,9 @@ export default function InstallPrompt() {
           transition={{ type: "spring", damping: 24, stiffness: 260 }}
           className="fixed inset-x-0 bottom-0 z-50 px-4 pb-4"
         >
-          <div className="mx-auto flex max-w-md items-center gap-3 rounded-2xl border border-green-100 bg-white p-4 shadow-lg">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-green-700 text-white font-semibold">
-              NH
+          <div className="glass-card mx-auto flex max-w-md items-center gap-3 rounded-3xl p-4">
+            <div className="h-10 w-10 shrink-0 overflow-hidden rounded-full ring-2 ring-white/70">
+              <Image src="/logo.png" alt="Logo Pondok Pesantren Nurul Huda" width={40} height={40} className="h-full w-full object-cover" />
             </div>
             <div className="flex-1 text-sm">
               {showAndroidBanner ? (
@@ -102,14 +103,14 @@ export default function InstallPrompt() {
               {showAndroidBanner && (
                 <button
                   onClick={handleInstallClick}
-                  className="rounded-lg bg-green-700 px-3 py-1.5 text-sm font-medium text-white active:scale-95 transition"
+                  className="glass-button-primary rounded-full px-3 py-1.5 text-sm font-medium text-white transition active:scale-95"
                 >
                   Install
                 </button>
               )}
               <button
                 onClick={dismiss}
-                className="rounded-lg px-3 py-1.5 text-sm font-medium text-gray-500 active:scale-95 transition"
+                className="rounded-full px-3 py-1.5 text-sm font-medium text-gray-500 transition active:scale-95"
               >
                 Tutup
               </button>
