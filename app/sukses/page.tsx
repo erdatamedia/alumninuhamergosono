@@ -2,16 +2,19 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
+import { Field, inputClass } from "@/app/components/ui";
 
 type Summary = {
   alumni: {
+    id: string;
     nia: string;
     namaLengkap: string;
     noWhatsapp: string;
     alamat: string | null;
     angkatanMasuk: number | null;
     angkatanLulus: number | null;
+    hasPinActive?: boolean;
   };
   partisipasi: {
     tahunAcara: number;
@@ -106,7 +109,162 @@ export default function SuksesPage() {
           Kembali ke Beranda
         </Link>
       </motion.div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.15, duration: 0.3 }}
+        className="mt-4 w-full max-w-md"
+      >
+        <PinActivationCard alumniId={alumni.id} hasPinActive={Boolean(alumni.hasPinActive)} />
+      </motion.div>
     </main>
+  );
+}
+
+function PinActivationCard({
+  alumniId,
+  hasPinActive,
+}: {
+  alumniId: string;
+  hasPinActive: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const [oldPin, setOldPin] = useState("");
+  const [pin, setPin] = useState("");
+  const [confirmPin, setConfirmPin] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [done, setDone] = useState(false);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setSubmitting(true);
+    try {
+      const res = await fetch("/api/alumni/activate-pin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          alumniId,
+          pin,
+          confirmPin,
+          ...(hasPinActive ? { oldPin } : {}),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error ?? "Gagal menyimpan PIN.");
+        setSubmitting(false);
+        return;
+      }
+      setDone(true);
+    } catch {
+      setError("Gagal terhubung ke server. Coba lagi.");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  if (done) {
+    return (
+      <div className="glass-card rounded-[28px] p-6 text-center">
+        <p className="text-sm font-semibold text-gray-900">
+          {hasPinActive ? "PIN berhasil diganti." : "Dashboard Alumni aktif!"}
+        </p>
+        <p className="mt-1 text-sm text-gray-600">
+          Catat baik-baik PIN Anda. Nomor HP Anda adalah username untuk masuk ke{" "}
+          <Link href="/dashboard/login" className="font-medium text-green-800 underline">
+            Dashboard Alumni
+          </Link>
+          .
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="glass-card rounded-[28px] p-6">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <p className="text-sm font-semibold text-gray-900">
+            {hasPinActive ? "Ganti PIN Dashboard" : "Aktifkan Dashboard Alumni"}
+          </p>
+          <p className="mt-1 text-xs text-gray-600">
+            {hasPinActive
+              ? "Sudah aktif. Ganti PIN kapan saja bila perlu."
+              : "Opsional: lihat & kelola data Anda sendiri lewat dashboard pribadi."}
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          className="glass-button-secondary shrink-0 rounded-full px-4 py-2 text-xs font-medium text-gray-700 transition active:scale-95"
+        >
+          {open ? "Tutup" : hasPinActive ? "Ganti PIN" : "Aktifkan"}
+        </button>
+      </div>
+
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.25 }}
+            className="overflow-hidden"
+          >
+            <form onSubmit={handleSubmit} className="mt-4 space-y-3">
+              {hasPinActive && (
+                <Field label="PIN Lama">
+                  <input
+                    required
+                    type="password"
+                    inputMode="numeric"
+                    maxLength={6}
+                    value={oldPin}
+                    onChange={(e) => setOldPin(e.target.value)}
+                    className={inputClass}
+                  />
+                </Field>
+              )}
+              <Field label={hasPinActive ? "PIN Baru (6 digit)" : "Buat PIN (6 digit)"}>
+                <input
+                  required
+                  type="password"
+                  inputMode="numeric"
+                  maxLength={6}
+                  value={pin}
+                  onChange={(e) => setPin(e.target.value)}
+                  className={inputClass}
+                />
+              </Field>
+              <Field label="Konfirmasi PIN">
+                <input
+                  required
+                  type="password"
+                  inputMode="numeric"
+                  maxLength={6}
+                  value={confirmPin}
+                  onChange={(e) => setConfirmPin(e.target.value)}
+                  className={inputClass}
+                />
+              </Field>
+
+              {error && <p className="text-sm text-red-600">{error}</p>}
+
+              <button
+                type="submit"
+                disabled={submitting}
+                className="glass-button-primary w-full rounded-full py-3 text-base font-medium text-white transition active:scale-[0.97] disabled:opacity-60"
+              >
+                {submitting ? "Menyimpan..." : hasPinActive ? "Ganti PIN" : "Aktifkan Dashboard"}
+              </button>
+            </form>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }
 

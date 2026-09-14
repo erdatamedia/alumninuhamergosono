@@ -126,6 +126,7 @@ export async function POST(req: NextRequest) {
       alamat: alumni.alamat,
       angkatanMasuk: alumni.angkatanMasuk,
       angkatanLulus: alumni.angkatanLulus,
+      hasPinActive: Boolean(alumni.pinHash),
     },
     partisipasi: {
       tahunAcara: partisipasi.tahunAcara,

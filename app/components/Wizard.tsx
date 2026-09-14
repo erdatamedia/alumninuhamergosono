@@ -12,6 +12,8 @@ import {
   TAHLIL_AKBAR_OPTIONS,
 } from "@/lib/types";
 import { EVENT_INFO } from "@/lib/event-info";
+import AlumniProfileForm from "./AlumniProfileForm";
+import { Field, ToggleField, inputClass } from "./ui";
 
 const TAHUN_ACARA = process.env.NEXT_PUBLIC_TAHUN_ACARA ?? "2026";
 
@@ -38,9 +40,6 @@ const variants = {
   center: { opacity: 1, x: 0 },
   exit: { opacity: 0, x: -24 },
 };
-
-const inputClass =
-  "glass-input w-full rounded-2xl px-4 py-3 text-base text-gray-900 outline-none transition focus:ring-2 focus:ring-green-400/40";
 
 export default function Wizard() {
   const router = useRouter();
@@ -332,83 +331,20 @@ function ProfileStep({
   onBack: () => void;
 }) {
   return (
-    <div className="glass-card rounded-[28px] p-6">
-      <h2 className="text-base font-semibold text-gray-900">
-        {isNew ? "Data belum ditemukan" : "Konfirmasi data Anda"}
-      </h2>
-      <p className="mt-1 text-sm text-gray-600">
-        {isNew
+    <AlumniProfileForm
+      alumni={alumni}
+      setAlumni={setAlumni}
+      title={isNew ? "Data belum ditemukan" : "Konfirmasi data Anda"}
+      description={
+        isNew
           ? "Nomor ini belum terdaftar. Silakan lengkapi data di bawah untuk mendaftar."
-          : "Periksa data Anda, ubah bila ada yang perlu diperbarui."}
-      </p>
-
-      {alumni.nia && (
-        <p className="mt-2 text-xs text-gray-500">NIA: {alumni.nia}</p>
-      )}
-
-      <form onSubmit={onSubmit} className="mt-4 space-y-3">
-        <Field label="Nama Lengkap">
-          <input
-            required
-            value={alumni.namaLengkap}
-            onChange={(e) => setAlumni({ ...alumni, namaLengkap: e.target.value })}
-            className={inputClass}
-          />
-        </Field>
-        <Field label="No. WhatsApp">
-          <input
-            required
-            type="tel"
-            inputMode="numeric"
-            value={alumni.noWhatsapp}
-            onChange={(e) => setAlumni({ ...alumni, noWhatsapp: e.target.value })}
-            className={inputClass}
-          />
-        </Field>
-        <Field label="Alamat">
-          <textarea
-            value={alumni.alamat}
-            onChange={(e) => setAlumni({ ...alumni, alamat: e.target.value })}
-            rows={2}
-            className={inputClass}
-          />
-        </Field>
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="Angkatan Masuk">
-            <input
-              type="number"
-              value={alumni.angkatanMasuk}
-              onChange={(e) => setAlumni({ ...alumni, angkatanMasuk: e.target.value })}
-              className={inputClass}
-            />
-          </Field>
-          <Field label="Angkatan Lulus">
-            <input
-              type="number"
-              value={alumni.angkatanLulus}
-              onChange={(e) => setAlumni({ ...alumni, angkatanLulus: e.target.value })}
-              className={inputClass}
-            />
-          </Field>
-        </div>
-
-        <div className="flex gap-3 pt-2">
-          <button
-            type="button"
-            onClick={onBack}
-            className="glass-button-secondary rounded-full px-5 py-3 text-base font-medium text-gray-700 transition active:scale-95"
-          >
-            Kembali
-          </button>
-          <button
-            type="submit"
-            className="glass-button-primary flex-1 rounded-full py-3 text-base font-medium text-white transition active:scale-[0.97]"
-          >
-            Lanjut
-          </button>
-        </div>
-      </form>
-    </div>
+          : "Periksa data Anda, ubah bila ada yang perlu diperbarui."
+      }
+      submitLabel="Lanjut"
+      cancelLabel="Kembali"
+      onSubmit={onSubmit}
+      onCancel={onBack}
+    />
   );
 }
 
@@ -521,46 +457,6 @@ function AttendanceStep({
           </button>
         </div>
       </form>
-    </div>
-  );
-}
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <label className="block">
-      <span className="mb-1 block text-sm font-medium text-gray-700">{label}</span>
-      {children}
-    </label>
-  );
-}
-
-function ToggleField({
-  label,
-  checked,
-  onChange,
-}: {
-  label: string;
-  checked: boolean;
-  onChange: (v: boolean) => void;
-}) {
-  return (
-    <div className="glass-input flex items-center justify-between rounded-2xl px-4 py-3">
-      <span className="text-sm font-medium text-gray-700">{label}</span>
-      <button
-        type="button"
-        role="switch"
-        aria-checked={checked}
-        onClick={() => onChange(!checked)}
-        className={`relative h-7 w-12 shrink-0 rounded-full transition-colors ${
-          checked ? "bg-green-600" : "bg-gray-300"
-        }`}
-      >
-        <span
-          className={`absolute top-0.5 left-0.5 h-6 w-6 rounded-full bg-white shadow transition-transform ${
-            checked ? "translate-x-5" : "translate-x-0"
-          }`}
-        />
-      </button>
     </div>
   );
 }

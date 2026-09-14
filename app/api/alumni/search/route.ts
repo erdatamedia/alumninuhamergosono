@@ -39,6 +39,7 @@ export async function POST(req: NextRequest) {
       angkatanMasuk: alumni.angkatanMasuk,
       angkatanLulus: alumni.angkatanLulus,
       dataVerifiedAt: alumni.dataVerifiedAt,
+      hasPinActive: Boolean(alumni.pinHash),
     },
     partisipasi: alumni.partisipasi[0]
       ? {
