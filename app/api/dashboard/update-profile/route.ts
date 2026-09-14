@@ -3,6 +3,8 @@ import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { normalizeWhatsapp, isValidWhatsapp } from "@/lib/phone";
 import { verifySessionToken, SESSION_COOKIE_NAME } from "@/lib/session";
+import { isUniqueConstraintOn } from "@/lib/prisma-errors";
+import { isValidAngkatan } from "@/lib/types";
 
 // Update profil dari dashboard alumni (bukan alur wizard) — hanya menyentuh
 // data Alumni, tidak pernah menyentuh PartisipasiHaul tahun berjalan.
@@ -49,17 +51,32 @@ export async function POST(req: NextRequest) {
       ? null
       : Number(angkatanLulus);
 
-  const alumni = await prisma.alumni.update({
-    where: { id: session.alumniId },
-    data: {
-      namaLengkap,
-      noWhatsapp,
-      alamat: alamat || null,
-      angkatanMasuk: angkatanMasukNum,
-      angkatanLulus: angkatanLulusNum,
-      dataVerifiedAt: new Date(),
-    },
-  });
+  if (!isValidAngkatan(angkatanMasukNum) || !isValidAngkatan(angkatanLulusNum)) {
+    return NextResponse.json({ error: "Angkatan masuk/lulus tidak valid." }, { status: 400 });
+  }
+
+  let alumni;
+  try {
+    alumni = await prisma.alumni.update({
+      where: { id: session.alumniId },
+      data: {
+        namaLengkap,
+        noWhatsapp,
+        alamat: alamat || null,
+        angkatanMasuk: angkatanMasukNum,
+        angkatanLulus: angkatanLulusNum,
+        dataVerifiedAt: new Date(),
+      },
+    });
+  } catch (err) {
+    if (isUniqueConstraintOn(err, "noWhatsapp")) {
+      return NextResponse.json(
+        { error: "Nomor WhatsApp sudah dipakai alumni lain. Hubungi sekretariat." },
+        { status: 409 },
+      );
+    }
+    throw err;
+  }
 
   return NextResponse.json({
     alumni: {

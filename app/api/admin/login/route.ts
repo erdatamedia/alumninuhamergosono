@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ADMIN_COOKIE_NAME, makeAdminToken } from "@/lib/admin-auth";
+import {
+  ADMIN_COOKIE_NAME,
+  ADMIN_TOKEN_MAX_AGE_SECONDS,
+  makeAdminToken,
+  timingSafeStringEqual,
+} from "@/lib/admin-auth";
 import { checkRateLimit, getClientIp, formatRetryAfter } from "@/lib/rate-limit";
 
 const MAX_ATTEMPT = 5;
@@ -17,10 +22,15 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  const adminPassword = process.env.ADMIN_PASSWORD;
   const body = await req.json().catch(() => null);
   const password = body?.password;
 
-  if (typeof password !== "string" || password !== process.env.ADMIN_PASSWORD) {
+  if (
+    typeof password !== "string" ||
+    !adminPassword ||
+    !timingSafeStringEqual(password, adminPassword)
+  ) {
     return NextResponse.json({ error: "Password salah." }, { status: 401 });
   }
 
@@ -30,7 +40,7 @@ export async function POST(req: NextRequest) {
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
     path: "/",
-    maxAge: 60 * 60 * 8,
+    maxAge: ADMIN_TOKEN_MAX_AGE_SECONDS,
   });
   return res;
 }

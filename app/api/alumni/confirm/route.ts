@@ -2,8 +2,42 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { normalizeWhatsapp, isValidWhatsapp } from "@/lib/phone";
 import { generateNia } from "@/lib/nia";
+import { isUniqueConstraintOn } from "@/lib/prisma-errors";
+import {
+  HAUL_OPTIONS,
+  MENGINAP_OPTIONS,
+  TAHLIL_AKBAR_OPTIONS,
+  MAX_JUMLAH_ANAK,
+  isValidAngkatan,
+  isValidOptionValue,
+} from "@/lib/types";
 
 const TAHUN_ACARA = Number(process.env.NEXT_PUBLIC_TAHUN_ACARA ?? "2026");
+
+async function createNewAlumni(input: {
+  namaLengkap: string;
+  noWhatsapp: string;
+  alamat: string | null;
+  angkatanMasuk: number | null;
+  angkatanLulus: number | null;
+}) {
+  // Race condition: dua registrasi baru nyaris bersamaan di angkatan yang sama
+  // bisa menghitung NIA berikutnya yang sama persis. Coba sekali lagi dengan
+  // NIA baru kalau itu yang terjadi, supaya tidak salah menolak dengan pesan
+  // "nomor sudah terdaftar" padahal yang bentrok sebenarnya NIA-nya.
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const nia = await generateNia(input.angkatanMasuk);
+    try {
+      return await prisma.alumni.create({
+        data: { ...input, nia, source: "SELF_REGISTERED", dataVerifiedAt: new Date() },
+      });
+    } catch (err) {
+      if (isUniqueConstraintOn(err, "nia") && attempt === 0) continue;
+      throw err;
+    }
+  }
+  throw new Error("Gagal generate NIA unik setelah beberapa percobaan.");
+}
 
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => null);
@@ -47,7 +81,24 @@ export async function POST(req: NextRequest) {
       ? null
       : Number(angkatanLulus);
 
-  const jumlahAnakNum = Math.max(0, Number.isFinite(Number(jumlahAnak)) ? Number(jumlahAnak) : 0);
+  if (!isValidAngkatan(angkatanMasukNum) || !isValidAngkatan(angkatanLulusNum)) {
+    return NextResponse.json({ error: "Angkatan masuk/lulus tidak valid." }, { status: 400 });
+  }
+  if (!isValidOptionValue(tahlilAkbar, TAHLIL_AKBAR_OPTIONS)) {
+    return NextResponse.json({ error: "Nilai Tahlil Akbar tidak valid." }, { status: 400 });
+  }
+  if (!isValidOptionValue(haul, HAUL_OPTIONS)) {
+    return NextResponse.json({ error: "Nilai Haul tidak valid." }, { status: 400 });
+  }
+  if (!isValidOptionValue(menginap, MENGINAP_OPTIONS)) {
+    return NextResponse.json({ error: "Nilai Menginap tidak valid." }, { status: 400 });
+  }
+
+  const jumlahAnakRaw = Number(jumlahAnak);
+  const jumlahAnakNum = Math.min(
+    MAX_JUMLAH_ANAK,
+    Math.max(0, Number.isFinite(jumlahAnakRaw) ? jumlahAnakRaw : 0),
+  );
   const membawaPasanganBool = Boolean(membawaPasangan);
 
   let alumni;
@@ -76,17 +127,28 @@ export async function POST(req: NextRequest) {
         { status: 409 },
       );
     }
-    alumni = await prisma.alumni.update({
-      where: { id: alumniId },
-      data: {
-        namaLengkap,
-        noWhatsapp,
-        alamat: alamat || null,
-        angkatanMasuk: angkatanMasukNum,
-        angkatanLulus: angkatanLulusNum,
-        dataVerifiedAt: new Date(),
-      },
-    });
+
+    try {
+      alumni = await prisma.alumni.update({
+        where: { id: alumniId },
+        data: {
+          namaLengkap,
+          noWhatsapp,
+          alamat: alamat || null,
+          angkatanMasuk: angkatanMasukNum,
+          angkatanLulus: angkatanLulusNum,
+          dataVerifiedAt: new Date(),
+        },
+      });
+    } catch (err) {
+      if (isUniqueConstraintOn(err, "noWhatsapp")) {
+        return NextResponse.json(
+          { error: "Nomor WhatsApp sudah dipakai alumni lain. Hubungi sekretariat." },
+          { status: 409 },
+        );
+      }
+      throw err;
+    }
   } else {
     const conflict = await prisma.alumni.findUnique({ where: { noWhatsapp } });
     if (conflict) {
@@ -95,19 +157,24 @@ export async function POST(req: NextRequest) {
         { status: 409 },
       );
     }
-    const nia = await generateNia(angkatanMasukNum);
-    alumni = await prisma.alumni.create({
-      data: {
-        nia,
+
+    try {
+      alumni = await createNewAlumni({
         namaLengkap,
         noWhatsapp,
         alamat: alamat || null,
         angkatanMasuk: angkatanMasukNum,
         angkatanLulus: angkatanLulusNum,
-        source: "SELF_REGISTERED",
-        dataVerifiedAt: new Date(),
-      },
-    });
+      });
+    } catch (err) {
+      if (isUniqueConstraintOn(err, "noWhatsapp")) {
+        return NextResponse.json(
+          { error: "Nomor WhatsApp ini sudah terdaftar. Silakan cari ulang." },
+          { status: 409 },
+        );
+      }
+      throw err;
+    }
   }
 
   const partisipasi = await prisma.partisipasiHaul.upsert({
