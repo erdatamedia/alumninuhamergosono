@@ -21,6 +21,8 @@ export async function POST(req: NextRequest) {
     tahlilAkbar,
     haul,
     menginap,
+    membawaPasangan,
+    jumlahAnak,
   } = body;
 
   if (typeof namaLengkap !== "string" || !namaLengkap.trim()) {
@@ -43,6 +45,9 @@ export async function POST(req: NextRequest) {
     angkatanLulus === "" || angkatanLulus === null || angkatanLulus === undefined
       ? null
       : Number(angkatanLulus);
+
+  const jumlahAnakNum = Math.max(0, Number.isFinite(Number(jumlahAnak)) ? Number(jumlahAnak) : 0);
+  const membawaPasanganBool = Boolean(membawaPasangan);
 
   let alumni;
 
@@ -94,13 +99,21 @@ export async function POST(req: NextRequest) {
 
   const partisipasi = await prisma.partisipasiHaul.upsert({
     where: { alumniId_tahunAcara: { alumniId: alumni.id, tahunAcara: TAHUN_ACARA } },
-    update: { tahlilAkbar, haul, menginap },
+    update: {
+      tahlilAkbar,
+      haul,
+      menginap,
+      membawaPasangan: membawaPasanganBool,
+      jumlahAnak: jumlahAnakNum,
+    },
     create: {
       alumniId: alumni.id,
       tahunAcara: TAHUN_ACARA,
       tahlilAkbar,
       haul,
       menginap,
+      membawaPasangan: membawaPasanganBool,
+      jumlahAnak: jumlahAnakNum,
     },
   });
 
@@ -119,6 +132,8 @@ export async function POST(req: NextRequest) {
       tahlilAkbar: partisipasi.tahlilAkbar,
       haul: partisipasi.haul,
       menginap: partisipasi.menginap,
+      membawaPasangan: partisipasi.membawaPasangan,
+      jumlahAnak: partisipasi.jumlahAnak,
     },
   });
 }

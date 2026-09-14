@@ -31,6 +31,8 @@ export async function GET() {
     { header: "Tahlil Akbar", key: "tahlilAkbar", width: 14 },
     { header: "Haul", key: "haul", width: 24 },
     { header: "Menginap", key: "menginap", width: 16 },
+    { header: "Membawa Pasangan (1=Ya)", key: "membawaPasangan", width: 20 },
+    { header: "Jumlah Anak", key: "jumlahAnak", width: 14 },
     { header: "Sumber Data", key: "source", width: 18 },
   ];
   sheet.getRow(1).font = { bold: true };
@@ -48,6 +50,8 @@ export async function GET() {
       tahlilAkbar: p?.tahlilAkbar ?? "",
       haul: p?.haul ?? "",
       menginap: p?.menginap ?? "",
+      membawaPasangan: p?.membawaPasangan ? 1 : 0,
+      jumlahAnak: p?.jumlahAnak ?? 0,
       source: a.source,
     });
   }

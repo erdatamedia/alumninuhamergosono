@@ -45,6 +45,8 @@ export async function POST(req: NextRequest) {
           tahlilAkbar: alumni.partisipasi[0].tahlilAkbar,
           haul: alumni.partisipasi[0].haul,
           menginap: alumni.partisipasi[0].menginap,
+          membawaPasangan: alumni.partisipasi[0].membawaPasangan,
+          jumlahAnak: alumni.partisipasi[0].jumlahAnak,
         }
       : null,
   });

@@ -17,6 +17,8 @@ type AlumniRow = {
     tahlilAkbar: string | null;
     haul: string | null;
     menginap: string | null;
+    membawaPasangan: boolean;
+    jumlahAnak: number;
   } | null;
 };
 
@@ -187,18 +189,20 @@ export default function AdminPage() {
                 <th className="px-4 py-3 font-medium">Angkatan</th>
                 <th className="px-4 py-3 font-medium">Verifikasi</th>
                 <th className="px-4 py-3 font-medium">Kehadiran</th>
+                <th className="px-4 py-3 font-medium">Pasangan</th>
+                <th className="px-4 py-3 font-medium">Anak</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-6 text-center text-gray-400">
+                  <td colSpan={8} className="px-4 py-6 text-center text-gray-400">
                     Memuat...
                   </td>
                 </tr>
               ) : alumni.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-6 text-center text-gray-400">
+                  <td colSpan={8} className="px-4 py-6 text-center text-gray-400">
                     Tidak ada data.
                   </td>
                 </tr>
@@ -223,6 +227,10 @@ export default function AdminPage() {
                       )}
                     </td>
                     <td className="px-4 py-3 text-gray-600">{a.partisipasi?.haul ?? "-"}</td>
+                    <td className="px-4 py-3 text-gray-600">
+                      {a.partisipasi?.membawaPasangan ? "Ya" : "Tidak"}
+                    </td>
+                    <td className="px-4 py-3 text-gray-600">{a.partisipasi?.jumlahAnak ?? 0}</td>
                   </tr>
                 ))
               )}

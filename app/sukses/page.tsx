@@ -18,6 +18,8 @@ type Summary = {
     tahlilAkbar: string | null;
     haul: string | null;
     menginap: string | null;
+    membawaPasangan: boolean;
+    jumlahAnak: number;
   };
 };
 
@@ -93,6 +95,8 @@ export default function SuksesPage() {
           <Row label="Tahlil Akbar" value={partisipasi.tahlilAkbar || "-"} />
           <Row label="Haul" value={partisipasi.haul || "-"} />
           <Row label="Menginap" value={partisipasi.menginap || "-"} />
+          <Row label="Membawa Pasangan" value={partisipasi.membawaPasangan ? "Ya" : "Tidak"} />
+          <Row label="Jumlah Anak" value={String(partisipasi.jumlahAnak ?? 0)} />
         </div>
 
         <Link

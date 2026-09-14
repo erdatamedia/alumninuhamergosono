@@ -27,14 +27,16 @@ model Alumni {
 }
 
 model PartisipasiHaul {
-  id          String   @id @default(uuid())
-  alumniId    String
-  alumni      Alumni   @relation(fields: [alumniId], references: [id])
-  tahunAcara  Int
-  tahlilAkbar String?
-  haul        String?
-  menginap    String?
-  createdAt   DateTime @default(now())
+  id              String   @id @default(uuid())
+  alumniId        String
+  alumni          Alumni   @relation(fields: [alumniId], references: [id])
+  tahunAcara      Int
+  tahlilAkbar     String?
+  haul            String?
+  menginap        String?
+  membawaPasangan Boolean  @default(false)
+  jumlahAnak      Int      @default(0)
+  createdAt       DateTime @default(now())
 
   @@unique([alumniId, tahunAcara])
 }

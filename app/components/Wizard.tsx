@@ -11,6 +11,7 @@ import {
   MENGINAP_OPTIONS,
   TAHLIL_AKBAR_OPTIONS,
 } from "@/lib/types";
+import { EVENT_INFO } from "@/lib/event-info";
 
 const TAHUN_ACARA = process.env.NEXT_PUBLIC_TAHUN_ACARA ?? "2026";
 
@@ -28,6 +29,8 @@ const emptyPartisipasi: PartisipasiData = {
   tahlilAkbar: "",
   haul: "",
   menginap: "",
+  membawaPasangan: false,
+  jumlahAnak: "0",
 };
 
 const variants = {
@@ -83,6 +86,8 @@ export default function Wizard() {
           tahlilAkbar: data.partisipasi?.tahlilAkbar ?? "",
           haul: data.partisipasi?.haul ?? "",
           menginap: data.partisipasi?.menginap ?? "",
+          membawaPasangan: data.partisipasi?.membawaPasangan ?? false,
+          jumlahAnak: data.partisipasi?.jumlahAnak?.toString() ?? "0",
         });
       } else {
         setIsNew(true);
@@ -122,6 +127,8 @@ export default function Wizard() {
           tahlilAkbar: partisipasi.tahlilAkbar,
           haul: partisipasi.haul,
           menginap: partisipasi.menginap,
+          membawaPasangan: partisipasi.membawaPasangan,
+          jumlahAnak: partisipasi.jumlahAnak,
         }),
       });
       const data = await res.json();
@@ -211,6 +218,7 @@ export default function Wizard() {
               exit="exit"
               transition={{ duration: 0.25 }}
             >
+              <EventInfoCard />
               <AttendanceStep
                 partisipasi={partisipasi}
                 setPartisipasi={setPartisipasi}
@@ -404,6 +412,36 @@ function ProfileStep({
   );
 }
 
+function EventInfoCard() {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      className="glass-card mb-4 rounded-[28px] p-6"
+    >
+      <h2 className="text-base font-semibold text-gray-900">{EVENT_INFO.judul}</h2>
+      <p className="mt-1 text-sm text-gray-600">{EVENT_INFO.lokasi}</p>
+
+      <div className="mt-4 space-y-3">
+        {EVENT_INFO.hari.map((h) => (
+          <div key={h.tanggal} className="glass-input rounded-2xl p-4">
+            <p className="text-sm font-semibold text-gray-900">{h.tanggal}</p>
+            <p className="text-xs text-gray-600">
+              {h.nama} &middot; {h.waktu}
+            </p>
+            <ul className="mt-2 list-inside list-disc space-y-1 text-xs text-gray-700">
+              {h.sesi.map((s) => (
+                <li key={s}>{s}</li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
+    </motion.div>
+  );
+}
+
 function AttendanceStep({
   partisipasi,
   setPartisipasi,
@@ -444,6 +482,25 @@ function AttendanceStep({
           onChange={(v) => setPartisipasi({ ...partisipasi, menginap: v })}
         />
 
+        <ToggleField
+          label="Membawa pasangan (suami/istri)?"
+          checked={partisipasi.membawaPasangan}
+          onChange={(v) => setPartisipasi({ ...partisipasi, membawaPasangan: v })}
+        />
+
+        <Field label="Jumlah anak yang ikut hadir">
+          <input
+            type="number"
+            min={0}
+            inputMode="numeric"
+            value={partisipasi.jumlahAnak}
+            onChange={(e) =>
+              setPartisipasi({ ...partisipasi, jumlahAnak: e.target.value })
+            }
+            className={inputClass}
+          />
+        </Field>
+
         {error && <p className="text-sm text-red-600">{error}</p>}
 
         <div className="flex gap-3 pt-2">
@@ -474,6 +531,37 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
       <span className="mb-1 block text-sm font-medium text-gray-700">{label}</span>
       {children}
     </label>
+  );
+}
+
+function ToggleField({
+  label,
+  checked,
+  onChange,
+}: {
+  label: string;
+  checked: boolean;
+  onChange: (v: boolean) => void;
+}) {
+  return (
+    <div className="glass-input flex items-center justify-between rounded-2xl px-4 py-3">
+      <span className="text-sm font-medium text-gray-700">{label}</span>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={checked}
+        onClick={() => onChange(!checked)}
+        className={`relative h-7 w-12 shrink-0 rounded-full transition-colors ${
+          checked ? "bg-green-600" : "bg-gray-300"
+        }`}
+      >
+        <span
+          className={`absolute top-0.5 left-0.5 h-6 w-6 rounded-full bg-white shadow transition-transform ${
+            checked ? "translate-x-5" : "translate-x-0"
+          }`}
+        />
+      </button>
+    </div>
   );
 }
 

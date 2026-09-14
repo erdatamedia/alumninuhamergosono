@@ -13,6 +13,8 @@ export type PartisipasiData = {
   tahlilAkbar: string;
   haul: string;
   menginap: string;
+  membawaPasangan: boolean;
+  jumlahAnak: string;
 };
 
 export const TAHLIL_AKBAR_OPTIONS = ["Hadir", "Tidak"];
