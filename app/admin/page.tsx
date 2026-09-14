@@ -89,7 +89,8 @@ export default function AdminPage() {
     });
     setLoggingIn(false);
     if (!res.ok) {
-      setLoginError("Password salah.");
+      const data = await res.json().catch(() => null);
+      setLoginError(data?.error ?? "Password salah.");
       return;
     }
     setAuthenticated(true);

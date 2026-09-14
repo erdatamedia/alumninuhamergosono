@@ -1,10 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { normalizeWhatsapp, isValidWhatsapp } from "@/lib/phone";
+import { checkRateLimit, getClientIp, formatRetryAfter } from "@/lib/rate-limit";
 
 const TAHUN_ACARA = Number(process.env.NEXT_PUBLIC_TAHUN_ACARA ?? "2026");
 
+const MAX_ATTEMPT = 10;
+const WINDOW_MS = 60 * 1000;
+
 export async function POST(req: NextRequest) {
+  const ip = getClientIp(req.headers);
+  const rate = checkRateLimit(`alumni-search:${ip}`, MAX_ATTEMPT, WINDOW_MS);
+  if (!rate.allowed) {
+    return NextResponse.json(
+      {
+        error: `Terlalu banyak percobaan pencarian. Coba lagi ${formatRetryAfter(rate.retryAfterMs)}.`,
+      },
+      { status: 429 },
+    );
+  }
+
   const body = await req.json().catch(() => null);
   const rawPhone = body?.noWhatsapp;
 

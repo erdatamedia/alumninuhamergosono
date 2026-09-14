@@ -1,7 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ADMIN_COOKIE_NAME, makeAdminToken } from "@/lib/admin-auth";
+import { checkRateLimit, getClientIp, formatRetryAfter } from "@/lib/rate-limit";
+
+const MAX_ATTEMPT = 5;
+const WINDOW_MS = 15 * 60 * 1000;
 
 export async function POST(req: NextRequest) {
+  const ip = getClientIp(req.headers);
+  const rate = checkRateLimit(`admin-login:${ip}`, MAX_ATTEMPT, WINDOW_MS);
+  if (!rate.allowed) {
+    return NextResponse.json(
+      {
+        error: `Terlalu banyak percobaan gagal. Coba lagi ${formatRetryAfter(rate.retryAfterMs)}.`,
+      },
+      { status: 429 },
+    );
+  }
+
   const body = await req.json().catch(() => null);
   const password = body?.password;
 
