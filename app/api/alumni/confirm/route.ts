@@ -13,6 +13,7 @@ export async function POST(req: NextRequest) {
 
   const {
     alumniId,
+    verifyNoWhatsapp,
     namaLengkap,
     noWhatsapp: rawPhone,
     alamat,
@@ -56,6 +57,18 @@ export async function POST(req: NextRequest) {
     if (!existing) {
       return NextResponse.json({ error: "Data alumni tidak ditemukan." }, { status: 404 });
     }
+
+    // Wajib buktikan tahu nomor HP yang sudah terdaftar sebelum boleh ubah data —
+    // alumniId saja (walau UUID sulit ditebak) tidak cukup untuk otorisasi.
+    const verifyNormalized =
+      typeof verifyNoWhatsapp === "string" ? normalizeWhatsapp(verifyNoWhatsapp) : "";
+    if (verifyNormalized !== existing.noWhatsapp) {
+      return NextResponse.json(
+        { error: "Verifikasi nomor HP tidak cocok. Silakan cari ulang dari halaman utama." },
+        { status: 403 },
+      );
+    }
+
     const conflict = await prisma.alumni.findUnique({ where: { noWhatsapp } });
     if (conflict && conflict.id !== alumniId) {
       return NextResponse.json(

@@ -48,6 +48,10 @@ export default function Wizard({ verifiedCount }: { verifiedCount: number }) {
   const [searching, setSearching] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
   const [isNew, setIsNew] = useState(false);
+  // Nomor HP yang berhasil ditemukan lewat pencarian — bukti "tahu nomor HP",
+  // dikirim balik ke server saat submit supaya alumniId saja tidak cukup
+  // untuk mengubah data alumni lain (lihat app/api/alumni/confirm/route.ts).
+  const [verifiedNoWhatsapp, setVerifiedNoWhatsapp] = useState<string | null>(null);
 
   const [alumni, setAlumni] = useState<AlumniData>(emptyAlumni);
   const [partisipasi, setPartisipasi] = useState<PartisipasiData>(emptyPartisipasi);
@@ -71,6 +75,7 @@ export default function Wizard({ verifiedCount }: { verifiedCount: number }) {
       }
       if (data.found) {
         setIsNew(false);
+        setVerifiedNoWhatsapp(data.alumni.noWhatsapp);
         setAlumni({
           id: data.alumni.id,
           nia: data.alumni.nia,
@@ -118,6 +123,7 @@ export default function Wizard({ verifiedCount }: { verifiedCount: number }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           alumniId: alumni.id,
+          verifyNoWhatsapp: verifiedNoWhatsapp,
           namaLengkap: alumni.namaLengkap,
           noWhatsapp: alumni.noWhatsapp,
           alamat: alumni.alamat,

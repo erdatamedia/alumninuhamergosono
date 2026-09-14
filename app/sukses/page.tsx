@@ -116,7 +116,11 @@ export default function SuksesPage() {
         transition={{ delay: 0.15, duration: 0.3 }}
         className="mt-4 w-full max-w-md"
       >
-        <PinActivationCard alumniId={alumni.id} hasPinActive={Boolean(alumni.hasPinActive)} />
+        <PinActivationCard
+          alumniId={alumni.id}
+          noWhatsapp={alumni.noWhatsapp}
+          hasPinActive={Boolean(alumni.hasPinActive)}
+        />
       </motion.div>
     </main>
   );
@@ -124,9 +128,11 @@ export default function SuksesPage() {
 
 function PinActivationCard({
   alumniId,
+  noWhatsapp,
   hasPinActive,
 }: {
   alumniId: string;
+  noWhatsapp: string;
   hasPinActive: boolean;
 }) {
   const [open, setOpen] = useState(false);
@@ -149,7 +155,7 @@ function PinActivationCard({
           alumniId,
           pin,
           confirmPin,
-          ...(hasPinActive ? { oldPin } : {}),
+          ...(hasPinActive ? { oldPin } : { verifyNoWhatsapp: noWhatsapp }),
         }),
       });
       const data = await res.json();
