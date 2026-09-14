@@ -26,7 +26,6 @@ const AlumniCard = forwardRef<
           src="/logo.png"
           alt="Logo Pondok Pesantren Nurul Huda"
           className="h-full w-full object-cover"
-          crossOrigin="anonymous"
         />
       </div>
       <p className="text-[11px] font-semibold tracking-wide text-white/85 uppercase">
@@ -37,12 +36,7 @@ const AlumniCard = forwardRef<
       <div className="mx-auto my-4 flex h-28 w-28 items-center justify-center overflow-hidden rounded-full border-4 border-white/80 bg-white/15">
         {fotoUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={fotoUrl}
-            alt={namaLengkap}
-            className="h-full w-full object-cover"
-            crossOrigin="anonymous"
-          />
+          <img src={fotoUrl} alt={namaLengkap} className="h-full w-full object-cover" />
         ) : (
           <svg width="48" height="48" viewBox="0 0 24 24" fill="none" className="text-white/70">
             <circle cx="12" cy="8" r="4" stroke="currentColor" strokeWidth="1.5" />

@@ -296,7 +296,8 @@ function KartuAlumniSection({
       link.download = `kartu-alumni-${alumni.nia}.png`;
       link.href = dataUrl;
       link.click();
-    } catch {
+    } catch (err) {
+      console.error("Gagal membuat gambar kartu:", err);
       setDownloadError("Gagal membuat gambar kartu. Coba lagi.");
     } finally {
       setDownloading(false);
