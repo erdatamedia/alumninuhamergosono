@@ -48,3 +48,9 @@ next-env.d.ts
 
 # data pribadi alumni (nama/no HP/alamat) — repo ini public, jangan pernah commit
 /prisma/alumni_seed_final.json
+
+# foto profil alumni (upload runtime) — data biner privat, jangan masuk git.
+# PENTING: folder ini WAJIB ikut di-backup manual bersama prod.db saat deploy,
+# lihat catatan backup di README/instruksi deploy.
+/public/uploads/foto-profil/*
+!/public/uploads/foto-profil/.gitkeep

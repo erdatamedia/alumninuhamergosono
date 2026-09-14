@@ -41,7 +41,7 @@ const variants = {
   exit: { opacity: 0, x: -24 },
 };
 
-export default function Wizard() {
+export default function Wizard({ verifiedCount }: { verifiedCount: number }) {
   const router = useRouter();
   const [step, setStep] = useState<Step>("search");
   const [phone, setPhone] = useState("");
@@ -185,6 +185,7 @@ export default function Wizard() {
                 onSubmit={handleSearch}
                 loading={searching}
                 error={searchError}
+                verifiedCount={verifiedCount}
               />
             </motion.div>
           )}
@@ -271,12 +272,14 @@ function SearchStep({
   onSubmit,
   loading,
   error,
+  verifiedCount,
 }: {
   phone: string;
   setPhone: (v: string) => void;
   onSubmit: (e: React.FormEvent) => void;
   loading: boolean;
   error: string | null;
+  verifiedCount: number;
 }) {
   return (
     <div className="glass-card rounded-[28px] p-6">
@@ -284,6 +287,11 @@ function SearchStep({
       <p className="mt-1 text-sm text-gray-600">
         Masukkan nomor HP/WhatsApp yang pernah Anda daftarkan sebelumnya.
       </p>
+      {verifiedCount > 0 && (
+        <p className="mt-2 text-xs text-gray-500">
+          {verifiedCount.toLocaleString("id-ID")} alumni sudah memperbarui data mereka.
+        </p>
+      )}
       <form onSubmit={onSubmit} className="mt-4 space-y-3">
         <input
           type="tel"

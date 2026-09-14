@@ -23,6 +23,7 @@ model Alumni {
   pinHash          String?
   pinFailedAttempt Int       @default(0)
   pinLockedUntil   DateTime?
+  fotoUrl          String?
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 

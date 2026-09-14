@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { AnimatePresence, motion } from "framer-motion";
 import AlumniProfileForm from "@/app/components/AlumniProfileForm";
 import { AlumniData } from "@/lib/types";
+import AlumniCard from "./AlumniCard";
 
 type AlumniProfile = {
   id: string;
@@ -15,6 +16,7 @@ type AlumniProfile = {
   alamat: string | null;
   angkatanMasuk: number | null;
   angkatanLulus: number | null;
+  fotoUrl: string | null;
 };
 
 type RiwayatItem = {
@@ -121,6 +123,8 @@ export default function DashboardClient({
           </button>
         </header>
 
+        <KartuAlumniSection alumni={alumni} onFotoUpdated={(fotoUrl) => setAlumni((a) => ({ ...a, fotoUrl }))} />
+
         <AnimatePresence mode="wait" initial={false}>
           {editing ? (
             <motion.div
@@ -212,6 +216,159 @@ function Row({ label, value }: { label: string; value: string }) {
     <div className="flex justify-between gap-4">
       <span className="text-gray-600">{label}</span>
       <span className="text-right font-medium text-gray-900">{value}</span>
+    </div>
+  );
+}
+
+const MAX_FOTO_SIZE = 2 * 1024 * 1024;
+const ALLOWED_FOTO_TYPES = ["image/jpeg", "image/png", "image/webp"];
+
+function KartuAlumniSection({
+  alumni,
+  onFotoUpdated,
+}: {
+  alumni: AlumniProfile;
+  onFotoUpdated: (fotoUrl: string) => void;
+}) {
+  const cardRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [downloading, setDownloading] = useState(false);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
+
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    setUploadError(null);
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!ALLOWED_FOTO_TYPES.includes(file.type)) {
+      setUploadError("Format file harus JPEG, PNG, atau WebP.");
+      return;
+    }
+    if (file.size > MAX_FOTO_SIZE) {
+      setUploadError("Ukuran file maksimal 2MB.");
+      return;
+    }
+
+    setSelectedFile(file);
+    setPreviewUrl(URL.createObjectURL(file));
+  }
+
+  async function handleUpload() {
+    if (!selectedFile) return;
+    setUploading(true);
+    setUploadError(null);
+    try {
+      const formData = new FormData();
+      formData.append("foto", selectedFile);
+      const res = await fetch("/api/dashboard/upload-foto", {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setUploadError(data.error ?? "Gagal mengunggah foto.");
+        setUploading(false);
+        return;
+      }
+      onFotoUpdated(data.fotoUrl);
+      setSelectedFile(null);
+      setPreviewUrl(null);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    } catch {
+      setUploadError("Gagal terhubung ke server. Coba lagi.");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  async function handleDownload() {
+    if (!cardRef.current) return;
+    setDownloadError(null);
+    setDownloading(true);
+    try {
+      const { toPng } = await import("html-to-image");
+      const dataUrl = await toPng(cardRef.current, { pixelRatio: 2, cacheBust: true });
+      const link = document.createElement("a");
+      link.download = `kartu-alumni-${alumni.nia}.png`;
+      link.href = dataUrl;
+      link.click();
+    } catch {
+      setDownloadError("Gagal membuat gambar kartu. Coba lagi.");
+    } finally {
+      setDownloading(false);
+    }
+  }
+
+  return (
+    <div className="glass-card mb-4 rounded-[28px] p-6">
+      <h2 className="text-base font-semibold text-gray-900">Kartu Alumni Digital</h2>
+      <p className="mt-1 text-sm text-gray-600">
+        Kartu ini hanya bisa dilihat oleh Anda sendiri lewat dashboard ini.
+      </p>
+
+      <div className="mt-4">
+        <AlumniCard
+          ref={cardRef}
+          namaLengkap={alumni.namaLengkap}
+          nia={alumni.nia}
+          angkatanMasuk={alumni.angkatanMasuk}
+          angkatanLulus={alumni.angkatanLulus}
+          fotoUrl={previewUrl ?? alumni.fotoUrl}
+        />
+      </div>
+
+      {downloadError && <p className="mt-3 text-sm text-red-600">{downloadError}</p>}
+
+      <button
+        type="button"
+        onClick={handleDownload}
+        disabled={downloading}
+        className="glass-button-primary mt-4 w-full rounded-full py-3 text-sm font-medium text-white transition active:scale-[0.97] disabled:opacity-60"
+      >
+        {downloading ? "Menyiapkan gambar..." : "Download Kartu sebagai Gambar"}
+      </button>
+
+      <div className="glass-input mt-4 rounded-2xl p-4">
+        <p className="text-sm font-medium text-gray-700">
+          {alumni.fotoUrl ? "Ganti Foto Profil" : "Upload Foto Profil untuk Kartu Alumni"}
+        </p>
+        <p className="mt-1 text-xs text-gray-500">
+          JPEG/PNG/WebP, maksimal 2MB. Foto akan dipotong persegi otomatis.
+        </p>
+
+        <div className="mt-3 flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="glass-button-secondary rounded-full px-4 py-2 text-xs font-medium text-gray-700 transition active:scale-95"
+          >
+            Pilih Foto
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            onChange={handleFileChange}
+            className="hidden"
+          />
+          {selectedFile && (
+            <button
+              type="button"
+              onClick={handleUpload}
+              disabled={uploading}
+              className="glass-button-primary rounded-full px-4 py-2 text-xs font-medium text-white transition active:scale-95 disabled:opacity-60"
+            >
+              {uploading ? "Mengunggah..." : "Simpan Foto"}
+            </button>
+          )}
+        </div>
+
+        {uploadError && <p className="mt-2 text-sm text-red-600">{uploadError}</p>}
+      </div>
     </div>
   );
 }

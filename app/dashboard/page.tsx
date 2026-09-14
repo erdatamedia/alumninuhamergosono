@@ -25,6 +25,7 @@ export default async function DashboardPage() {
         alamat: alumni.alamat,
         angkatanMasuk: alumni.angkatanMasuk,
         angkatanLulus: alumni.angkatanLulus,
+        fotoUrl: alumni.fotoUrl,
       }}
       riwayat={alumni.partisipasi.map((p) => ({
         tahunAcara: p.tahunAcara,

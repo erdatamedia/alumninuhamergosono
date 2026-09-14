@@ -1,36 +1,64 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Portal Alumni Nurul Huda Mergosono
 
-## Getting Started
+Portal update data alumni & konfirmasi kehadiran acara Haul Pondok Pesantren
+Salafiyah Syafi'iyah Nurul Huda Mergosono. Next.js App Router + Prisma/SQLite,
+tanpa backend terpisah.
 
-First, run the development server:
+## Stack
+
+Next.js (App Router) · TypeScript · Prisma + SQLite · Tailwind CSS ·
+Framer Motion · bcryptjs (PIN dashboard) · sharp (proses foto) ·
+html-to-image (download kartu alumni)
+
+## Setup lokal
 
 ```bash
+npm install
+cp .env.example .env   # isi ADMIN_PASSWORD, SESSION_SECRET, dst.
+npx prisma migrate dev
+npx prisma db seed     # butuh prisma/alumni_seed_final.json (lihat prisma/alumni_seed_final.example.json)
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Environment variables
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| Variabel | Kegunaan |
+| --- | --- |
+| `DATABASE_URL` | Path file SQLite, mis. `file:./dev.db` |
+| `ADMIN_PASSWORD` | Password tunggal halaman `/admin` |
+| `NEXT_PUBLIC_TAHUN_ACARA` | Tahun acara Haul berjalan, ganti tiap tahun |
+| `SESSION_SECRET` | Secret HMAC untuk cookie session dashboard alumni (`/dashboard`). Generate acak: `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"` |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## ⚠️ Data yang WAJIB ikut di-backup
 
-## Learn More
+Selain file database (`prisma/prod.db` atau `prisma/dev.db`), folder
+**`public/uploads/foto-profil/`** berisi file foto profil alumni yang
+di-upload lewat dashboard (untuk Kartu Alumni Digital). Folder ini **bukan**
+metadata — isinya file gambar asli yang dirujuk oleh kolom `Alumni.fotoUrl`
+di database.
 
-To learn more about Next.js, take a look at the following resources:
+**Backup database tanpa folder ini akan membuat foto alumni hilang** (link
+`fotoUrl` di database tetap ada, tapi filenya tidak) walau data lain aman.
+Selalu backup keduanya bersamaan:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+# contoh backup manual di VPS
+tar -czf backup-haul-$(date +%Y%m%d).tar.gz \
+  /srv/apps/haul/prisma/prod.db \
+  /srv/apps/haul/public/uploads/foto-profil
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Deploy (VPS, PM2 + Nginx)
 
-## Deploy on Vercel
+```bash
+git pull
+npm install
+npx prisma migrate deploy
+npx prisma generate
+npm run build
+pm2 restart haul
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Kalau ada environment variable baru, tambahkan ke `.env` di server **sebelum**
+`npm run build` — route handler membacanya saat runtime, bukan saat build,
+tapi build tetap perlu dijalankan ulang supaya kode terbaru ter-compile.
