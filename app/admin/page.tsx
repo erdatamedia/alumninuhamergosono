@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
+import RekapCard, { RekapData } from "./RekapCard";
 
 type AlumniRow = {
   id: string;
@@ -34,6 +35,13 @@ export default function AdminPage() {
   const [angkatanFilter, setAngkatanFilter] = useState("");
   const [haulFilter, setHaulFilter] = useState("");
   const [verifFilter, setVerifFilter] = useState("");
+
+  const [rekapData, setRekapData] = useState<RekapData | null>(null);
+  const [rekapLoading, setRekapLoading] = useState(false);
+  const [rekapError, setRekapError] = useState<string | null>(null);
+  const [downloading, setDownloading] = useState(false);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
+  const rekapCardRef = useRef<HTMLDivElement>(null);
 
   async function loadAlumni() {
     setLoading(true);
@@ -88,6 +96,50 @@ export default function AdminPage() {
     loadAlumni();
   }
 
+  async function handleGenerateRekap() {
+    setRekapError(null);
+    setDownloadError(null);
+    setRekapLoading(true);
+    try {
+      const res = await fetch("/api/admin/rekap");
+      if (res.status === 401) {
+        setAuthenticated(false);
+        setRekapLoading(false);
+        return;
+      }
+      const data = await res.json();
+      if (!res.ok) {
+        setRekapError(data.error ?? "Gagal memuat rekap.");
+        setRekapLoading(false);
+        return;
+      }
+      setRekapData(data);
+    } catch {
+      setRekapError("Gagal terhubung ke server. Coba lagi.");
+    } finally {
+      setRekapLoading(false);
+    }
+  }
+
+  async function handleDownloadRekap() {
+    if (!rekapCardRef.current) return;
+    setDownloadError(null);
+    setDownloading(true);
+    try {
+      const { toPng } = await import("html-to-image");
+      const dataUrl = await toPng(rekapCardRef.current, { pixelRatio: 2, cacheBust: true });
+      const link = document.createElement("a");
+      link.download = `rekap-alumni-haul-${rekapData?.tahunAcara ?? ""}.png`;
+      link.href = dataUrl;
+      link.click();
+    } catch (err) {
+      console.error("Gagal membuat gambar rekap:", err);
+      setDownloadError("Gagal membuat gambar rekap. Coba lagi.");
+    } finally {
+      setDownloading(false);
+    }
+  }
+
   const angkatanOptions = useMemo(() => {
     const years = new Set<number>();
     alumni.forEach((a) => a.angkatanMasuk && years.add(a.angkatanMasuk));
@@ -137,13 +189,53 @@ export default function AdminPage() {
             </div>
             <h1 className="text-xl font-semibold text-gray-900">Data Alumni</h1>
           </div>
-          <a
-            href="/api/admin/export"
-            className="glass-button-primary rounded-full px-4 py-2 text-sm font-medium text-white transition active:scale-95"
-          >
-            Export Excel
-          </a>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={handleGenerateRekap}
+              disabled={rekapLoading}
+              className="glass-button-secondary rounded-full px-4 py-2 text-sm font-medium text-gray-700 transition active:scale-95 disabled:opacity-60"
+            >
+              {rekapLoading ? "Memuat..." : "Buat Laporan Rekap"}
+            </button>
+            <a
+              href="/api/admin/export"
+              className="glass-button-primary rounded-full px-4 py-2 text-sm font-medium text-white transition active:scale-95"
+            >
+              Export Excel
+            </a>
+          </div>
         </div>
+
+        {rekapError && <p className="mt-3 text-sm text-red-600">{rekapError}</p>}
+
+        {rekapData && (
+          <div className="glass-card mt-4 rounded-[28px] p-6">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <h2 className="text-base font-semibold text-gray-900">
+                Laporan Rekap &mdash; Haul {rekapData.tahunAcara}
+              </h2>
+              <p className="text-xs text-gray-500">
+                Hanya angka agregat, aman dibagikan ke grup WA (tidak ada data pribadi alumni).
+              </p>
+            </div>
+
+            <div className="mt-4">
+              <RekapCard ref={rekapCardRef} data={rekapData} />
+            </div>
+
+            {downloadError && <p className="mt-3 text-sm text-red-600">{downloadError}</p>}
+
+            <button
+              type="button"
+              onClick={handleDownloadRekap}
+              disabled={downloading}
+              className="glass-button-primary mx-auto mt-4 block w-full max-w-sm rounded-full py-3 text-sm font-medium text-white transition active:scale-[0.97] disabled:opacity-60"
+            >
+              {downloading ? "Menyiapkan gambar..." : "Download sebagai Gambar"}
+            </button>
+          </div>
+        )}
 
         <div className="mt-4 flex flex-wrap gap-3">
           <select
