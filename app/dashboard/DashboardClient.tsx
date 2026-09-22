@@ -314,6 +314,7 @@ function KartuAlumniSection({
       <div className="mt-4">
         <AlumniCard
           ref={cardRef}
+          alumniId={alumni.id}
           namaLengkap={alumni.namaLengkap}
           nia={alumni.nia}
           angkatanMasuk={alumni.angkatanMasuk}

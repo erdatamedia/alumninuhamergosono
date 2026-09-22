@@ -1,17 +1,38 @@
 "use client";
 
-import { forwardRef } from "react";
+import { forwardRef, useEffect, useState } from "react";
+import QRCode from "qrcode";
 
 const AlumniCard = forwardRef<
   HTMLDivElement,
   {
+    alumniId: string;
     namaLengkap: string;
     nia: string;
     angkatanMasuk: number | null;
     angkatanLulus: number | null;
     fotoUrl: string | null;
   }
->(function AlumniCard({ namaLengkap, nia, angkatanMasuk, angkatanLulus, fotoUrl }, ref) {
+>(function AlumniCard({ alumniId, namaLengkap, nia, angkatanMasuk, angkatanLulus, fotoUrl }, ref) {
+  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    // Encode alumni.id (UUID), bukan NIA — NIA sekuensial gampang ditebak,
+    // UUID jauh lebih aman meski risikonya sendiri rendah (cuma penanda
+    // kehadiran, bukan otorisasi sensitif).
+    QRCode.toDataURL(alumniId, { width: 200, margin: 1, color: { dark: "#0a3d26" } })
+      .then((url) => {
+        if (!cancelled) setQrDataUrl(url);
+      })
+      .catch(() => {
+        if (!cancelled) setQrDataUrl(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [alumniId]);
+
   return (
     <div
       ref={ref}
@@ -20,6 +41,13 @@ const AlumniCard = forwardRef<
         background: "linear-gradient(160deg, #22c55e 0%, #15803d 55%, #0a3d26 100%)",
       }}
     >
+      {qrDataUrl && (
+        <div className="absolute top-4 right-4 rounded-lg bg-white p-1 shadow">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={qrDataUrl} alt="QR check-in" className="h-12 w-12" />
+        </div>
+      )}
+
       <div className="mx-auto mb-2 h-11 w-11 overflow-hidden rounded-full bg-white/90 ring-2 ring-white/60">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
@@ -50,6 +78,7 @@ const AlumniCard = forwardRef<
       <p className="text-sm text-white/85">
         Angkatan {angkatanMasuk ?? "-"} &ndash; {angkatanLulus ?? "-"}
       </p>
+      <p className="mt-3 text-[10px] text-white/60">Tunjukkan QR ini saat check-in di lokasi</p>
     </div>
   );
 });

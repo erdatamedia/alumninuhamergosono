@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import RekapCard, { RekapData } from "./RekapCard";
+import { AdminNav } from "./AdminGate";
 
 type AlumniRow = {
   id: string;
@@ -183,6 +184,7 @@ export default function AdminPage() {
   return (
     <main className="flex-1 px-4 py-8">
       <div className="mx-auto max-w-6xl">
+        <AdminNav active="alumni" />
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 overflow-hidden rounded-full ring-2 ring-white/70">
