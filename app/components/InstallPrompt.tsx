@@ -80,7 +80,7 @@ export default function InstallPrompt() {
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: 80, opacity: 0 }}
           transition={{ type: "spring", damping: 24, stiffness: 260 }}
-          className="fixed inset-x-0 bottom-0 z-50 px-4 pb-4"
+          className="fixed inset-x-0 bottom-20 z-50 px-4 pb-4 md:bottom-0"
         >
           <div className="glass-card mx-auto flex max-w-md items-center gap-3 rounded-3xl p-4">
             <div className="h-10 w-10 shrink-0 overflow-hidden rounded-full ring-2 ring-white/70">

@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import InstallPrompt from "./components/InstallPrompt";
 import ServiceWorkerRegister from "./components/ServiceWorkerRegister";
+import BottomNav from "./components/BottomNav";
 
 export const metadata: Metadata = {
   title: "Portal Alumni Nurul Huda Mergosono",
@@ -23,6 +24,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           <div className="blob-3" />
         </div>
         {children}
+        <BottomNav />
         <InstallPrompt />
         <ServiceWorkerRegister />
       </body>

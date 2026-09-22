@@ -19,7 +19,11 @@ export type PartisipasiData = {
 
 export const TAHLIL_AKBAR_OPTIONS = ["Hadir", "Tidak"];
 export const HAUL_OPTIONS = ["Hadir Luring", "Hadir Daring/Live Streaming", "Tidak Hadir"];
-export const MENGINAP_OPTIONS = ["Menginap", "Tidak menginap"];
+export const MENGINAP_OPTIONS = [
+  "Menginap di Pondok Nurul Huda Mergosono",
+  "Menginap di luar Pondok Nurul Huda Mergosono",
+  "Tidak menginap",
+];
 
 /** "" dianggap valid (artinya belum diisi/dipilih), selain itu harus persis cocok salah satu opsi. */
 export function isValidOptionValue(value: unknown, options: string[]): boolean {

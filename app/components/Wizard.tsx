@@ -11,8 +11,8 @@ import {
   MENGINAP_OPTIONS,
   TAHLIL_AKBAR_OPTIONS,
 } from "@/lib/types";
-import { EVENT_INFO } from "@/lib/event-info";
 import AlumniProfileForm from "./AlumniProfileForm";
+import EventInfoCard from "./EventInfoCard";
 import { Field, ToggleField, inputClass } from "./ui";
 
 const TAHUN_ACARA = process.env.NEXT_PUBLIC_TAHUN_ACARA ?? "2026";
@@ -224,7 +224,7 @@ export default function Wizard({ verifiedCount }: { verifiedCount: number }) {
               exit="exit"
               transition={{ duration: 0.25 }}
             >
-              <EventInfoCard />
+              <EventInfoCard className="mb-4" />
               <AttendanceStep
                 partisipasi={partisipasi}
                 setPartisipasi={setPartisipasi}
@@ -359,36 +359,6 @@ function ProfileStep({
       onSubmit={onSubmit}
       onCancel={onBack}
     />
-  );
-}
-
-function EventInfoCard() {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-      className="glass-card mb-4 rounded-[28px] p-6"
-    >
-      <h2 className="text-base font-semibold text-gray-900">{EVENT_INFO.judul}</h2>
-      <p className="mt-1 text-sm text-gray-600">{EVENT_INFO.lokasi}</p>
-
-      <div className="mt-4 space-y-3">
-        {EVENT_INFO.hari.map((h) => (
-          <div key={h.tanggal} className="glass-input rounded-2xl p-4">
-            <p className="text-sm font-semibold text-gray-900">{h.tanggal}</p>
-            <p className="text-xs text-gray-600">
-              {h.nama} &middot; {h.waktu}
-            </p>
-            <ul className="mt-2 list-inside list-disc space-y-1 text-xs text-gray-700">
-              {h.sesi.map((s) => (
-                <li key={s}>{s}</li>
-              ))}
-            </ul>
-          </div>
-        ))}
-      </div>
-    </motion.div>
   );
 }
 
