@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { Html5Qrcode } from "html5-qrcode";
-import AdminGate, { AdminNav } from "../AdminGate";
+import AdminGate from "../AdminGate";
 
 const TAHUN_ACARA = process.env.NEXT_PUBLIC_TAHUN_ACARA ?? "2026";
 
@@ -44,7 +44,7 @@ function PlaceholderAvatar({ size = 48 }: { size?: number }) {
 
 export default function CheckinPage() {
   return (
-    <AdminGate title="Check-in Panitia">
+    <AdminGate title="Check-in Panitia" active="checkin">
       <CheckinContent />
     </AdminGate>
   );
@@ -54,38 +54,35 @@ function CheckinContent() {
   const [mode, setMode] = useState<"scan" | "manual">("scan");
 
   return (
-    <main className="flex-1 px-4 py-8">
-      <div className="mx-auto max-w-2xl">
-        <AdminNav active="checkin" />
-        <h1 className="text-xl font-semibold text-gray-900">Check-in Alumni</h1>
-        <p className="mt-1 text-sm text-gray-600">
-          Haul {TAHUN_ACARA} &mdash; scan QR kartu alumni atau cari manual.
-        </p>
+    <div className="mx-auto max-w-2xl">
+      <h2 className="text-xl font-semibold text-gray-900">Check-in Alumni</h2>
+      <p className="mt-1 text-sm text-gray-600">
+        Haul {TAHUN_ACARA} &mdash; scan QR kartu alumni atau cari manual.
+      </p>
 
-        <div className="glass-pill mt-4 inline-flex w-fit gap-1 rounded-full p-1">
-          <button
-            type="button"
-            onClick={() => setMode("scan")}
-            className={`rounded-full px-4 py-2 text-sm font-medium transition ${
-              mode === "scan" ? "glass-pill-active text-white" : "text-gray-700"
-            }`}
-          >
-            Scan QR
-          </button>
-          <button
-            type="button"
-            onClick={() => setMode("manual")}
-            className={`rounded-full px-4 py-2 text-sm font-medium transition ${
-              mode === "manual" ? "glass-pill-active text-white" : "text-gray-700"
-            }`}
-          >
-            Cari Manual
-          </button>
-        </div>
-
-        <div className="mt-4">{mode === "scan" ? <ScanMode /> : <ManualMode />}</div>
+      <div className="glass-pill mt-4 inline-flex w-fit gap-1 rounded-full p-1">
+        <button
+          type="button"
+          onClick={() => setMode("scan")}
+          className={`rounded-full px-4 py-2 text-sm font-medium transition ${
+            mode === "scan" ? "glass-pill-active text-white" : "text-gray-700"
+          }`}
+        >
+          Scan QR
+        </button>
+        <button
+          type="button"
+          onClick={() => setMode("manual")}
+          className={`rounded-full px-4 py-2 text-sm font-medium transition ${
+            mode === "manual" ? "glass-pill-active text-white" : "text-gray-700"
+          }`}
+        >
+          Cari Manual
+        </button>
       </div>
-    </main>
+
+      <div className="mt-4">{mode === "scan" ? <ScanMode /> : <ManualMode />}</div>
+    </div>
   );
 }
 

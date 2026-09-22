@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import AdminGate, { AdminNav } from "../AdminGate";
+import AdminGate from "../AdminGate";
 
 const TAHUN_ACARA = process.env.NEXT_PUBLIC_TAHUN_ACARA ?? "2026";
 
@@ -26,7 +26,7 @@ function PlaceholderAvatar() {
 
 export default function UndianPage() {
   return (
-    <AdminGate title="Undian Doorprize">
+    <AdminGate title="Undian Doorprize" active="undian">
       <UndianContent />
     </AdminGate>
   );
@@ -129,10 +129,8 @@ function UndianContent() {
   const shownPerson = currentWinner ?? displayed;
 
   return (
-    <main className="flex-1 px-4 py-8">
-      <div className="mx-auto max-w-2xl">
-        <AdminNav active="undian" />
-        <h1 className="text-xl font-semibold text-gray-900">Undian Doorprize</h1>
+    <div className="mx-auto max-w-2xl">
+        <h2 className="text-xl font-semibold text-gray-900">Undian Doorprize</h2>
         <p className="mt-1 text-sm text-gray-600">
           Haul {TAHUN_ACARA} &mdash; {pool.length} alumni tersisa di undian.
         </p>
@@ -231,6 +229,5 @@ function UndianContent() {
           )}
         </div>
       </div>
-    </main>
   );
 }

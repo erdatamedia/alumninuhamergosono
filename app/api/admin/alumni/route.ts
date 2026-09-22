@@ -15,11 +15,20 @@ export async function GET(req: NextRequest) {
   const angkatan = searchParams.get("angkatan");
   const statusKehadiran = searchParams.get("statusKehadiran");
   const statusVerifikasi = searchParams.get("statusVerifikasi");
+  const q = searchParams.get("q")?.trim() ?? "";
 
   const where: Record<string, unknown> = {};
   if (angkatan) where.angkatanMasuk = Number(angkatan);
   if (statusVerifikasi === "verified") where.dataVerifiedAt = { not: null };
   if (statusVerifikasi === "unverified") where.dataVerifiedAt = null;
+  if (q) {
+    const digitsOnly = q.replace(/[^\d]/g, "");
+    where.OR = [
+      { namaLengkap: { contains: q } },
+      { nia: { contains: q } },
+      ...(digitsOnly.length >= 3 ? [{ noWhatsapp: { contains: digitsOnly } }] : []),
+    ];
+  }
 
   const alumniList = await prisma.alumni.findMany({
     where,
