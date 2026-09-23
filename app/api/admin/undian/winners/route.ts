@@ -28,3 +28,16 @@ export async function GET() {
     })),
   });
 }
+
+// Reset sesi undian: hapus semua catatan pemenang tahun berjalan supaya
+// pool undi kembali penuh. Dipisah dari reset check-in supaya keduanya
+// bisa di-reset independen saat uji coba (tidak saling terikat).
+export async function DELETE() {
+  const cookieStore = await cookies();
+  if (!isValidAdminToken(cookieStore.get(ADMIN_COOKIE_NAME)?.value)) {
+    return NextResponse.json({ error: "Tidak diizinkan." }, { status: 401 });
+  }
+
+  const result = await prisma.doorprizeWinner.deleteMany({ where: { tahunAcara: TAHUN_ACARA } });
+  return NextResponse.json({ ok: true, count: result.count });
+}

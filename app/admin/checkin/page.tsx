@@ -52,13 +52,77 @@ export default function CheckinPage() {
 
 function CheckinContent() {
   const [mode, setMode] = useState<"scan" | "manual">("scan");
+  const [confirmReset, setConfirmReset] = useState(false);
+  const [resetting, setResetting] = useState(false);
+  const [resetMessage, setResetMessage] = useState<string | null>(null);
+  const [resetError, setResetError] = useState<string | null>(null);
+
+  async function handleReset() {
+    setResetting(true);
+    setResetError(null);
+    setResetMessage(null);
+    try {
+      const res = await fetch("/api/admin/checkin/reset", { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) {
+        setResetError(data.error ?? "Gagal reset sesi check-in.");
+        return;
+      }
+      setResetMessage(`Sesi check-in direset — ${data.count} status check-in dikosongkan.`);
+      setConfirmReset(false);
+    } catch {
+      setResetError("Gagal terhubung ke server. Coba lagi.");
+    } finally {
+      setResetting(false);
+    }
+  }
 
   return (
     <div className="mx-auto max-w-2xl">
-      <h2 className="text-xl font-semibold text-gray-900">Check-in Alumni</h2>
-      <p className="mt-1 text-sm text-gray-600">
-        Haul {TAHUN_ACARA} &mdash; scan QR kartu alumni atau cari manual.
-      </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 className="text-xl font-semibold text-gray-900">Check-in Alumni</h2>
+          <p className="mt-1 text-sm text-gray-600">
+            Haul {TAHUN_ACARA} &mdash; scan QR kartu alumni atau cari manual.
+          </p>
+        </div>
+
+        {confirmReset ? (
+          <div className="flex shrink-0 items-center gap-2">
+            <button
+              type="button"
+              onClick={handleReset}
+              disabled={resetting}
+              className="rounded-full bg-red-600 px-3 py-1.5 text-xs font-medium text-white transition active:scale-95 disabled:opacity-60"
+            >
+              {resetting ? "Mereset..." : "Yakin reset semua check-in?"}
+            </button>
+            <button
+              type="button"
+              onClick={() => setConfirmReset(false)}
+              disabled={resetting}
+              className="glass-button-secondary rounded-full px-3 py-1.5 text-xs font-medium text-gray-700 transition active:scale-95"
+            >
+              Batal
+            </button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => {
+              setConfirmReset(true);
+              setResetMessage(null);
+              setResetError(null);
+            }}
+            className="glass-button-secondary shrink-0 rounded-full px-3 py-1.5 text-xs font-medium text-gray-700 transition active:scale-95"
+          >
+            Reset Sesi Check-in
+          </button>
+        )}
+      </div>
+
+      {resetMessage && <p className="mt-2 text-sm text-green-700">{resetMessage}</p>}
+      {resetError && <p className="mt-2 text-sm text-red-600">{resetError}</p>}
 
       <div className="glass-pill mt-4 inline-flex w-fit gap-1 rounded-full p-1">
         <button
