@@ -113,12 +113,29 @@ function UndianContent() {
     setError(null);
     setCurrentWinner(null);
     setNamaHadiah("");
-    const finalWinner = pool[Math.floor(Math.random() * pool.length)];
+
+    // Halaman undian biasanya dibuka sekali di awal acara dan dibiarkan
+    // menyala berjam-jam — refresh pool tepat sebelum undi supaya foto yang
+    // baru diupload alumni setelah halaman ini dibuka tetap ikut tampil,
+    // bukan foto kosong dari snapshot awal.
+    let currentPool = pool;
+    try {
+      const poolRes = await fetch("/api/admin/undian/pool");
+      const poolData = await poolRes.json();
+      if (poolRes.ok && poolData.pool.length > 0) {
+        currentPool = poolData.pool;
+        setPool(poolData.pool);
+      }
+    } catch {
+      // lanjut pakai pool yang sudah ada kalau refresh gagal
+    }
+
+    const finalWinner = currentPool[Math.floor(Math.random() * currentPool.length)];
 
     const totalSteps = 26;
     for (let i = 0; i < totalSteps; i++) {
       const isLast = i === totalSteps - 1;
-      const shown = isLast ? finalWinner : pool[Math.floor(Math.random() * pool.length)];
+      const shown = isLast ? finalWinner : currentPool[Math.floor(Math.random() * currentPool.length)];
       setDisplayed(shown);
       const delay = 40 + (i / totalSteps) ** 2 * 320;
       // eslint-disable-next-line no-await-in-loop
