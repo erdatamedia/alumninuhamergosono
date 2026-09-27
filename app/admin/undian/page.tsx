@@ -173,6 +173,34 @@ function UndianContent() {
     }
   }
 
+  const [cancelingWinnerId, setCancelingWinnerId] = useState<string | null>(null);
+
+  // Batalkan satu pemenang — dipakai saat orangnya ternyata tidak ada di
+  // lokasi walau sempat tercatat check-in, supaya hadiahnya bisa diundi
+  // ulang untuk alumni lain yang benar-benar hadir.
+  async function handleCancelWinner(winnerId: string) {
+    setCancelingWinnerId(winnerId);
+    setError(null);
+    try {
+      const res = await fetch("/api/admin/undian/winner", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ winnerId }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error ?? "Gagal batalkan pemenang.");
+        return;
+      }
+      setWinners((prev) => prev.filter((w) => w.id !== winnerId));
+      await loadData();
+    } catch {
+      setError("Gagal terhubung ke server.");
+    } finally {
+      setCancelingWinnerId(null);
+    }
+  }
+
   function handleBatal() {
     setCurrentWinner(null);
     setDisplayed(null);
@@ -282,7 +310,18 @@ function UndianContent() {
                 <span className="text-gray-900">
                   {w.namaLengkap} <span className="text-gray-400">({w.nia})</span>
                 </span>
-                <span className="text-gray-600">{w.namaHadiah || "-"}</span>
+                <div className="flex items-center gap-3">
+                  <span className="text-gray-600">{w.namaHadiah || "-"}</span>
+                  <button
+                    type="button"
+                    onClick={() => handleCancelWinner(w.id)}
+                    disabled={cancelingWinnerId === w.id}
+                    className="text-[11px] text-red-600 underline decoration-dotted disabled:opacity-60"
+                    title="Batalkan kalau orangnya ternyata tidak ada di lokasi"
+                  >
+                    {cancelingWinnerId === w.id ? "..." : "Batalkan"}
+                  </button>
+                </div>
               </div>
             ))}
           </div>

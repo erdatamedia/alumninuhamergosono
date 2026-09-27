@@ -43,3 +43,33 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({ checkedInAt: partisipasi.checkedInAt, alreadyCheckedIn: false });
 }
+
+// Batalkan check-in satu alumni — dipakai saat salah tandai hadir (mis. saat
+// acara padat dan check-in dilakukan manual tanpa scan QR per orang), tanpa
+// harus reset status check-in semua orang lewat /api/admin/checkin/reset.
+export async function DELETE(req: NextRequest) {
+  const cookieStore = await cookies();
+  if (!isValidAdminToken(cookieStore.get(ADMIN_COOKIE_NAME)?.value)) {
+    return NextResponse.json({ error: "Tidak diizinkan." }, { status: 401 });
+  }
+
+  const body = await req.json().catch(() => null);
+  const alumniId = body?.alumniId;
+  if (typeof alumniId !== "string" || !alumniId) {
+    return NextResponse.json({ error: "Data alumni tidak valid." }, { status: 400 });
+  }
+
+  const existing = await prisma.partisipasiHaul.findUnique({
+    where: { alumniId_tahunAcara: { alumniId, tahunAcara: TAHUN_ACARA } },
+  });
+  if (!existing?.checkedInAt) {
+    return NextResponse.json({ checkedInAt: null });
+  }
+
+  await prisma.partisipasiHaul.update({
+    where: { alumniId_tahunAcara: { alumniId, tahunAcara: TAHUN_ACARA } },
+    data: { checkedInAt: null },
+  });
+
+  return NextResponse.json({ checkedInAt: null });
+}

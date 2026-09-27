@@ -74,3 +74,27 @@ export async function POST(req: NextRequest) {
     },
   });
 }
+
+// Batalkan satu catatan pemenang — dipakai saat orangnya ternyata tidak ada
+// di lokasi (mis. check-in ditandai manual tanpa verifikasi fisik penuh),
+// supaya hadiahnya bisa diundi ulang tanpa harus reset seluruh sesi undian.
+export async function DELETE(req: NextRequest) {
+  const cookieStore = await cookies();
+  if (!isValidAdminToken(cookieStore.get(ADMIN_COOKIE_NAME)?.value)) {
+    return NextResponse.json({ error: "Tidak diizinkan." }, { status: 401 });
+  }
+
+  const body = await req.json().catch(() => null);
+  const winnerId = body?.winnerId;
+  if (typeof winnerId !== "string" || !winnerId) {
+    return NextResponse.json({ error: "ID pemenang tidak valid." }, { status: 400 });
+  }
+
+  const winner = await prisma.doorprizeWinner.findUnique({ where: { id: winnerId } });
+  if (!winner || winner.tahunAcara !== TAHUN_ACARA) {
+    return NextResponse.json({ error: "Catatan pemenang tidak ditemukan." }, { status: 404 });
+  }
+
+  await prisma.doorprizeWinner.delete({ where: { id: winnerId } });
+  return NextResponse.json({ ok: true });
+}

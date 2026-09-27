@@ -235,6 +235,28 @@ function ScanMode() {
     }
   }
 
+  async function handleUndo() {
+    if (!result) return;
+    setConfirming(true);
+    try {
+      const res = await fetch("/api/admin/checkin/confirm", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ alumniId: result.id }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error ?? "Gagal batalkan check-in.");
+        return;
+      }
+      setResult((prev) => (prev ? { ...prev, checkedInAt: null } : prev));
+    } catch {
+      setError("Gagal terhubung ke server.");
+    } finally {
+      setConfirming(false);
+    }
+  }
+
   function scanAgain() {
     setResult(null);
     setError(null);
@@ -283,9 +305,19 @@ function ScanMode() {
           </p>
 
           {result.checkedInAt ? (
-            <p className="mt-4 rounded-2xl bg-green-50 p-3 text-sm font-medium text-green-800">
-              Sudah check-in pukul {formatTime(result.checkedInAt)}
-            </p>
+            <>
+              <p className="mt-4 rounded-2xl bg-green-50 p-3 text-sm font-medium text-green-800">
+                Sudah check-in pukul {formatTime(result.checkedInAt)}
+              </p>
+              <button
+                type="button"
+                onClick={handleUndo}
+                disabled={confirming}
+                className="mt-2 w-full rounded-full py-2 text-xs font-medium text-red-600 underline decoration-dotted transition active:scale-95 disabled:opacity-60"
+              >
+                {confirming ? "Memproses..." : "Batalkan check-in (salah tandai)"}
+              </button>
+            </>
           ) : (
             <button
               type="button"
@@ -362,6 +394,28 @@ function ManualMode() {
     }
   }
 
+  async function handleUndo(id: string) {
+    setConfirmingId(id);
+    setError(null);
+    try {
+      const res = await fetch("/api/admin/checkin/confirm", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ alumniId: id }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error ?? "Gagal batalkan check-in.");
+        return;
+      }
+      setResults((prev) => prev.map((a) => (a.id === id ? { ...a, checkedInAt: null } : a)));
+    } catch {
+      setError("Gagal terhubung ke server.");
+    } finally {
+      setConfirmingId(null);
+    }
+  }
+
   return (
     <div className="glass-card rounded-[28px] p-6">
       <form onSubmit={handleSearch} className="flex gap-2">
@@ -403,9 +457,19 @@ function ManualMode() {
               </p>
             </div>
             {a.checkedInAt ? (
-              <span className="shrink-0 rounded-full bg-green-100 px-3 py-1.5 text-xs font-medium text-green-800">
-                Hadir {formatTime(a.checkedInAt)}
-              </span>
+              <div className="flex shrink-0 flex-col items-end gap-1">
+                <span className="rounded-full bg-green-100 px-3 py-1.5 text-xs font-medium text-green-800">
+                  Hadir {formatTime(a.checkedInAt)}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => handleUndo(a.id)}
+                  disabled={confirmingId === a.id}
+                  className="text-[11px] text-red-600 underline decoration-dotted disabled:opacity-60"
+                >
+                  Batalkan
+                </button>
+              </div>
             ) : (
               <button
                 type="button"

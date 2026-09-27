@@ -25,6 +25,17 @@ type AlumniRow = {
   } | null;
 };
 
+function formatWaktu(iso: string | null): string {
+  if (!iso) return "";
+  return new Date(iso).toLocaleString("id-ID", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 function toFormData(a: AlumniRow): AlumniData {
   return {
     id: a.id,
@@ -342,9 +353,12 @@ function AdminAlumniContent() {
                   </td>
                   <td className="px-4 py-3">
                     {a.dataVerifiedAt ? (
-                      <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">
-                        Terverifikasi
-                      </span>
+                      <div>
+                        <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">
+                          Terverifikasi
+                        </span>
+                        <p className="mt-1 text-[11px] text-gray-500">{formatWaktu(a.dataVerifiedAt)}</p>
+                      </div>
                     ) : (
                       <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
                         Belum
@@ -391,9 +405,12 @@ function AdminAlumniContent() {
                   </p>
                 </div>
                 {a.dataVerifiedAt ? (
-                  <span className="shrink-0 rounded-full bg-green-100 px-2 py-0.5 text-[11px] font-medium text-green-800">
-                    Terverifikasi
-                  </span>
+                  <div className="shrink-0 text-right">
+                    <span className="rounded-full bg-green-100 px-2 py-0.5 text-[11px] font-medium text-green-800">
+                      Terverifikasi
+                    </span>
+                    <p className="mt-1 text-[10px] text-gray-500">{formatWaktu(a.dataVerifiedAt)}</p>
+                  </div>
                 ) : (
                   <span className="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-800">
                     Belum
