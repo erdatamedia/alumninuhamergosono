@@ -5,12 +5,22 @@ import { ADMIN_COOKIE_NAME, isValidAdminToken } from "@/lib/admin-auth";
 
 const TAHUN_ACARA = Number(process.env.NEXT_PUBLIC_TAHUN_ACARA ?? "2026");
 
-// Pool undian: alumni yang sudah check-in tahun ini, dikurangi yang sudah
-// pernah menang di tahun yang sama (supaya tidak menang dobel).
+// Pool undian: alumni yang sudah presensi lewat sesi QR khusus undian
+// (DoorprizeSession/Entry) terbaru — bukan PartisipasiHaul.checkedInAt umum,
+// karena check-in umum terbukti bisa ditandai manual tanpa verifikasi fisik
+// penuh. Dikurangi yang sudah pernah menang di tahun yang sama.
 export async function GET() {
   const cookieStore = await cookies();
   if (!isValidAdminToken(cookieStore.get(ADMIN_COOKIE_NAME)?.value)) {
     return NextResponse.json({ error: "Tidak diizinkan." }, { status: 401 });
+  }
+
+  const session = await prisma.doorprizeSession.findFirst({
+    where: { tahunAcara: TAHUN_ACARA },
+    orderBy: { createdAt: "desc" },
+  });
+  if (!session) {
+    return NextResponse.json({ pool: [] });
   }
 
   const winners = await prisma.doorprizeWinner.findMany({
@@ -19,24 +29,23 @@ export async function GET() {
   });
   const winnerIds = winners.map((w) => w.alumniId);
 
-  const checkedIn = await prisma.partisipasiHaul.findMany({
+  const entries = await prisma.doorprizeEntry.findMany({
     where: {
-      tahunAcara: TAHUN_ACARA,
-      checkedInAt: { not: null },
+      sessionId: session.id,
       ...(winnerIds.length > 0 ? { alumniId: { notIn: winnerIds } } : {}),
     },
     include: {
       alumni: { select: { id: true, namaLengkap: true, nia: true, fotoUrl: true } },
     },
-    orderBy: { checkedInAt: "asc" },
+    orderBy: { createdAt: "asc" },
   });
 
   return NextResponse.json({
-    pool: checkedIn.map((p) => ({
-      id: p.alumni.id,
-      namaLengkap: p.alumni.namaLengkap,
-      nia: p.alumni.nia,
-      fotoUrl: p.alumni.fotoUrl,
+    pool: entries.map((e) => ({
+      id: e.alumni.id,
+      namaLengkap: e.alumni.namaLengkap,
+      nia: e.alumni.nia,
+      fotoUrl: e.alumni.fotoUrl,
     })),
   });
 }

@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import QRCode from "qrcode";
 import AdminGate from "../AdminGate";
 
 const TAHUN_ACARA = process.env.NEXT_PUBLIC_TAHUN_ACARA ?? "2026";
@@ -14,6 +15,15 @@ type WinnerItem = {
   fotoUrl: string | null;
   namaHadiah: string | null;
   createdAt: string;
+};
+type SessionInfo = {
+  id: string;
+  token: string;
+  expiresAt: string;
+  closedAt: string | null;
+  createdAt: string;
+  entryCount: number;
+  active: boolean;
 };
 
 function PlaceholderAvatar() {
@@ -49,6 +59,84 @@ function UndianContent() {
   const [confirmReset, setConfirmReset] = useState(false);
   const [resetting, setResetting] = useState(false);
   const [resetMessage, setResetMessage] = useState<string | null>(null);
+
+  const [session, setSession] = useState<SessionInfo | null>(null);
+  const [sessionBusy, setSessionBusy] = useState(false);
+  const [sessionError, setSessionError] = useState<string | null>(null);
+
+  async function loadSession() {
+    try {
+      const res = await fetch("/api/admin/undian/sesi");
+      const data = await res.json();
+      if (!res.ok) return;
+      const next: SessionInfo | null = data.session;
+      setSession((prev) => {
+        // Jumlah presensi berubah (ada yang baru scan) — refresh pool supaya
+        // hitungan "tersisa di undian" di header ikut ter-update.
+        if (next && (!prev || prev.entryCount !== next.entryCount)) {
+          fetch("/api/admin/undian/pool")
+            .then((r) => r.json())
+            .then((d) => d.pool && setPool(d.pool))
+            .catch(() => {});
+        }
+        return next;
+      });
+    } catch {
+      // polling diam-diam gagal — coba lagi di tick berikutnya
+    }
+  }
+
+  async function handleOpenSession(durasiMenit: number) {
+    setSessionBusy(true);
+    setSessionError(null);
+    try {
+      const res = await fetch("/api/admin/undian/sesi", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ durasiMenit }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setSessionError(data.error ?? "Gagal membuka sesi presensi.");
+        return;
+      }
+      setSession(data.session);
+    } catch {
+      setSessionError("Gagal terhubung ke server.");
+    } finally {
+      setSessionBusy(false);
+    }
+  }
+
+  async function handleCloseSession() {
+    if (!session) return;
+    setSessionBusy(true);
+    setSessionError(null);
+    try {
+      const res = await fetch("/api/admin/undian/sesi", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionId: session.id }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setSessionError(data.error ?? "Gagal menutup sesi presensi.");
+        return;
+      }
+      setSession(data.session);
+      await loadData();
+    } catch {
+      setSessionError("Gagal terhubung ke server.");
+    } finally {
+      setSessionBusy(false);
+    }
+  }
+
+  useEffect(() => {
+    loadSession();
+    const interval = setInterval(loadSession, 3000);
+    return () => clearInterval(interval);
+  }, []);
 
   async function loadData() {
     setLoading(true);
@@ -285,6 +373,14 @@ function UndianContent() {
       {resetMessage && <p className="mt-2 text-sm text-green-700">{resetMessage}</p>}
       {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
 
+      <SessionPresensiPanel
+        session={session}
+        busy={sessionBusy}
+        error={sessionError}
+        onOpen={handleOpenSession}
+        onClose={handleCloseSession}
+      />
+
       <DrawCard
         loading={loading}
         shownPerson={shownPerson}
@@ -345,6 +441,216 @@ function UndianContent() {
       )}
     </div>
   );
+}
+
+function formatCountdown(ms: number): string {
+  const totalSeconds = Math.max(0, Math.floor(ms / 1000));
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes}:${String(seconds).padStart(2, "0")}`;
+}
+
+function SessionPresensiPanel({
+  session,
+  busy,
+  error,
+  onOpen,
+  onClose,
+}: {
+  session: SessionInfo | null;
+  busy: boolean;
+  error: string | null;
+  onOpen: (durasiMenit: number) => void;
+  onClose: () => void;
+}) {
+  const [durasiMenit, setDurasiMenit] = useState(5);
+  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
+  const [now, setNow] = useState(() => Date.now());
+  const [fullscreen, setFullscreen] = useState(false);
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const interval = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    if (!session || typeof window === "undefined") {
+      setQrDataUrl(null);
+      return;
+    }
+    let cancelled = false;
+    const url = `${window.location.origin}/undian/presensi/${session.token}`;
+    QRCode.toDataURL(url, { width: 320, margin: 1, color: { dark: "#0a3d26" } })
+      .then((dataUrl) => {
+        if (!cancelled) setQrDataUrl(dataUrl);
+      })
+      .catch(() => {
+        if (!cancelled) setQrDataUrl(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [session]);
+
+  useEffect(() => {
+    function onFullscreenChange() {
+      if (!document.fullscreenElement) setFullscreen(false);
+    }
+    document.addEventListener("fullscreenchange", onFullscreenChange);
+    return () => document.removeEventListener("fullscreenchange", onFullscreenChange);
+  }, []);
+
+  async function toggleFullscreen() {
+    if (fullscreen) {
+      setFullscreen(false);
+      if (document.fullscreenElement) {
+        try {
+          await document.exitFullscreen();
+        } catch {
+          // abaikan
+        }
+      }
+      return;
+    }
+    setFullscreen(true);
+    try {
+      await panelRef.current?.requestFullscreen();
+    } catch {
+      // sebagian browser/konteks menolak fullscreen — overlay tetap tampil
+      // penuh lewat CSS di bawah, cukup untuk ditampilkan di TV/videotron.
+    }
+  }
+
+  const isActive = Boolean(session?.active);
+  const remainingMs = session ? new Date(session.expiresAt).getTime() - now : 0;
+  const expired = session && !session.active && !session.closedAt;
+
+  return (
+    <div
+      ref={panelRef}
+      className={
+        fullscreen
+          ? "fixed inset-0 z-[100] flex flex-col items-center justify-center bg-white p-8 text-center"
+          : "glass-card mt-4 rounded-[28px] p-6"
+      }
+    >
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h2 className={fullscreen ? "text-2xl font-bold text-gray-900" : "text-sm font-semibold text-gray-900"}>
+          Sesi Presensi Undian
+        </h2>
+        {session && (
+          <button
+            type="button"
+            onClick={toggleFullscreen}
+            className="glass-button-secondary rounded-full px-3 py-1.5 text-xs font-medium text-gray-700 transition active:scale-95"
+          >
+            {fullscreen ? "Tutup Layar Besar" : "Layar Besar"}
+          </button>
+        )}
+      </div>
+
+      {!fullscreen && (
+        <p className="mt-1 text-xs text-gray-500">
+          Alumni scan QR ini pakai HP masing-masing untuk membuktikan hadir &amp; wajib data
+          sudah terverifikasi sebelum bisa ikut undian.
+        </p>
+      )}
+
+      {sessionErrorOrNull(error)}
+
+      {!session && (
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          <label className="text-xs text-gray-600">
+            Durasi:
+            <select
+              value={durasiMenit}
+              onChange={(e) => setDurasiMenit(Number(e.target.value))}
+              className="glass-input ml-2 rounded-xl px-2 py-1 text-sm"
+            >
+              {[2, 3, 5, 10, 15].map((m) => (
+                <option key={m} value={m}>
+                  {m} menit
+                </option>
+              ))}
+            </select>
+          </label>
+          <button
+            type="button"
+            onClick={() => onOpen(durasiMenit)}
+            disabled={busy}
+            className="glass-button-primary rounded-full px-4 py-2 text-xs font-medium text-white transition active:scale-95 disabled:opacity-60"
+          >
+            {busy ? "Membuka..." : "Buka Sesi Presensi"}
+          </button>
+        </div>
+      )}
+
+      {session && isActive && (
+        <div className="mt-4 flex flex-col items-center">
+          {qrDataUrl && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={qrDataUrl}
+              alt="QR presensi undian"
+              className={fullscreen ? "h-80 w-80" : "h-48 w-48"}
+            />
+          )}
+          <p className={fullscreen ? "mt-4 text-6xl font-extrabold text-green-800" : "mt-3 text-2xl font-bold text-green-800"}>
+            {formatCountdown(remainingMs)}
+          </p>
+          <p className={fullscreen ? "mt-2 text-lg text-gray-600" : "mt-1 text-sm text-gray-600"}>
+            {session.entryCount} alumni sudah presensi
+          </p>
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={busy}
+            className="mt-4 rounded-full px-4 py-2 text-xs font-medium text-red-600 underline decoration-dotted disabled:opacity-60"
+          >
+            {busy ? "..." : "Tutup Sesi Sekarang"}
+          </button>
+        </div>
+      )}
+
+      {session && !isActive && (
+        <div className="mt-4 flex flex-col items-center">
+          <p className="rounded-2xl bg-gray-100 px-4 py-3 text-sm text-gray-700">
+            {expired ? "Waktu presensi sudah habis." : "Sesi ditutup."} {session.entryCount} alumni
+            terdaftar ikut undian.
+          </p>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <label className="text-xs text-gray-600">
+              Durasi sesi baru:
+              <select
+                value={durasiMenit}
+                onChange={(e) => setDurasiMenit(Number(e.target.value))}
+                className="glass-input ml-2 rounded-xl px-2 py-1 text-sm"
+              >
+                {[2, 3, 5, 10, 15].map((m) => (
+                  <option key={m} value={m}>
+                    {m} menit
+                  </option>
+                ))}
+              </select>
+            </label>
+            <button
+              type="button"
+              onClick={() => onOpen(durasiMenit)}
+              disabled={busy}
+              className="glass-button-primary rounded-full px-4 py-2 text-xs font-medium text-white transition active:scale-95 disabled:opacity-60"
+            >
+              {busy ? "Membuka..." : "Buka Sesi Baru"}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function sessionErrorOrNull(error: string | null) {
+  return error ? <p className="mt-2 text-sm text-red-600">{error}</p> : null;
 }
 
 function PersonPhoto({

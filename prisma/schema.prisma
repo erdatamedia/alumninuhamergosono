@@ -29,6 +29,7 @@ model Alumni {
 
   partisipasi PartisipasiHaul[]
   doorprizeWinners DoorprizeWinner[]
+  doorprizeEntries DoorprizeEntry[]
 }
 
 model PartisipasiHaul {
@@ -56,4 +57,31 @@ model DoorprizeWinner {
   createdAt  DateTime @default(now())
 
   @@unique([alumniId, tahunAcara])
+}
+
+// Sesi presensi khusus sebelum undian doorprize — alumni scan QR sesi ini
+// sendiri lewat HP masing-masing untuk membuktikan benar-benar hadir di
+// lokasi, dibatasi waktu (countdown). Terpisah dari PartisipasiHaul.checkedInAt
+// (check-in umum) karena yang itu terbukti bisa ditandai manual tanpa
+// verifikasi fisik penuh saat acara padat.
+model DoorprizeSession {
+  id         String    @id @default(uuid())
+  tahunAcara Int
+  token      String    @unique
+  expiresAt  DateTime
+  closedAt   DateTime?
+  createdAt  DateTime  @default(now())
+
+  entries DoorprizeEntry[]
+}
+
+model DoorprizeEntry {
+  id         String           @id @default(uuid())
+  sessionId  String
+  session    DoorprizeSession @relation(fields: [sessionId], references: [id])
+  alumniId   String
+  alumni     Alumni           @relation(fields: [alumniId], references: [id])
+  createdAt  DateTime         @default(now())
+
+  @@unique([sessionId, alumniId])
 }
