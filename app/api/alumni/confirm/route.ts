@@ -21,18 +21,24 @@ async function createNewAlumni(input: {
   angkatanMasuk: number | null;
   angkatanLulus: number | null;
 }) {
-  // Race condition: dua registrasi baru nyaris bersamaan di angkatan yang sama
-  // bisa menghitung NIA berikutnya yang sama persis. Coba sekali lagi dengan
-  // NIA baru kalau itu yang terjadi, supaya tidak salah menolak dengan pesan
-  // "nomor sudah terdaftar" padahal yang bentrok sebenarnya NIA-nya.
-  for (let attempt = 0; attempt < 2; attempt++) {
-    const nia = await generateNia(input.angkatanMasuk);
+  // Race condition: banyak registrasi baru nyaris bersamaan (umum terjadi saat
+  // acara ramai, apalagi yang tidak isi angkatan semua masuk grup "XX") bisa
+  // menghitung NIA berikutnya yang sama persis sebelum salah satu commit.
+  // Retry dengan offset unik per percobaan (bukan cuma ulang count()) supaya
+  // request-request yang bentrok tidak menghasilkan kandidat NIA yang sama
+  // lagi di percobaan berikutnya, plus jitter kecil biar tidak makin bertabrakan.
+  const MAX_ATTEMPTS = 15;
+  for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+    if (attempt > 0) {
+      await new Promise((resolve) => setTimeout(resolve, 20 + Math.random() * 80));
+    }
+    const nia = await generateNia(input.angkatanMasuk, attempt);
     try {
       return await prisma.alumni.create({
         data: { ...input, nia, source: "SELF_REGISTERED", dataVerifiedAt: new Date() },
       });
     } catch (err) {
-      if (isUniqueConstraintOn(err, "nia") && attempt === 0) continue;
+      if (isUniqueConstraintOn(err, "nia") && attempt < MAX_ATTEMPTS - 1) continue;
       throw err;
     }
   }
